@@ -27,6 +27,32 @@ namespace FPVR
         public System.Action ResetCourse;
         Vector2 tilt, keyMove; float climb, turn, heading, keyClimb, keyTurn;
         bool previousReset;
+        // Last VR thumbstick readings, shown on the VR HUD to help diagnose controller problems.
+        public Vector2 LeftStick { get; private set; }
+        public Vector2 RightStick { get; private set; }
+        // VR controllers are read through both Unity XR APIs; whichever reports a value wins.
+        InputAction leftStickAction, rightStickAction, leftTriggerAction, rightTriggerAction, resetAction;
+        static InputAction XRAction(string name, InputActionType type, params string[] bindings)
+        {
+            var action = new InputAction(name, type);
+            foreach (var b in bindings) action.AddBinding(b);
+            action.Enable();
+            return action;
+        }
+        void OnEnable()
+        {
+            leftStickAction = XRAction("Left Stick", InputActionType.Value, "<XRController>{LeftHand}/{Primary2DAxis}", "<XRController>{LeftHand}/thumbstick");
+            rightStickAction = XRAction("Right Stick", InputActionType.Value, "<XRController>{RightHand}/{Primary2DAxis}", "<XRController>{RightHand}/thumbstick");
+            leftTriggerAction = XRAction("Left Trigger", InputActionType.Value, "<XRController>{LeftHand}/trigger");
+            rightTriggerAction = XRAction("Right Trigger", InputActionType.Value, "<XRController>{RightHand}/trigger");
+            resetAction = XRAction("Reset", InputActionType.Button, "<XRController>{LeftHand}/primaryButton", "<XRController>{LeftHand}/{PrimaryButton}");
+        }
+        void OnDisable()
+        {
+            foreach (var a in new[] { leftStickAction, rightStickAction, leftTriggerAction, rightTriggerAction, resetAction })
+                a?.Dispose();
+        }
+        static Vector2 Larger(Vector2 a, Vector2 b) => a.sqrMagnitude >= b.sqrMagnitude ? a : b;
         void Awake()
         {
             Body = GetComponent<Rigidbody>();
@@ -69,8 +95,14 @@ namespace FPVR
             right.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primary2DAxis, out Vector2 rs);
             left.TryGetFeatureValue(UnityEngine.XR.CommonUsages.trigger, out float lt);
             right.TryGetFeatureValue(UnityEngine.XR.CommonUsages.trigger, out float rt);
+            ls = Larger(ls, leftStickAction.ReadValue<Vector2>());
+            rs = Larger(rs, rightStickAction.ReadValue<Vector2>());
+            lt = Mathf.Max(lt, leftTriggerAction.ReadValue<float>());
+            rt = Mathf.Max(rt, rightTriggerAction.ReadValue<float>());
+            LeftStick = ls; RightStick = rs;
             input |= ApplySticks(ls, rs, Dead(rt) - Dead(lt));
             if (left.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primaryButton, out bool x)) reset |= x;
+            reset |= resetAction.IsPressed();
 
             if (reset && !previousReset) ResetDrone();
             // Motors start automatically the moment you touch any flight control.
