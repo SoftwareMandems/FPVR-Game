@@ -26,6 +26,8 @@ namespace FPVR
             {
                 properties.SetColor("_BaseColor", state == 1 ? active : passed);
                 properties.SetColor("_Color", state == 1 ? active : passed);
+                // HDR emission so the next gate glows (and blooms) and cleared gates glow softly.
+                properties.SetColor("_EmissionColor", state == 1 ? active * 2.6f : passed * 1.2f);
             }
             foreach (var r in frame) if (!(r is MeshRenderer && r.GetComponent<TextMesh>() != null))
                 r.SetPropertyBlock(properties);
