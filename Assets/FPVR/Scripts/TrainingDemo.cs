@@ -16,6 +16,7 @@ namespace FPVR
         public Color passedGateColor = new Color(.25f, .95f, .5f);
         public float droneClearanceRadius = .29f;
         TrainingGate[] gates;
+        DroneAudio sounds;
         int nextGate; float elapsed; bool finished; Vector3 previous;
         GUIStyle heading, body;
         void Start()
@@ -29,6 +30,8 @@ namespace FPVR
                 if (gate && gate.isActiveAndEnabled) list.Add(gate);
             }
             gates = list.ToArray();
+            sounds = drone.GetComponent<DroneAudio>();
+            if (!sounds) sounds = drone.gameObject.AddComponent<DroneAudio>();
             // Ensure editable TextMesh labels use a supported built-in font and its material.
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             foreach (var label in FindObjectsByType<TextMesh>(FindObjectsSortMode.None))
@@ -61,6 +64,7 @@ namespace FPVR
             if (drone.armed && !finished && nextGate < gates.Length && gates[nextGate].Crossed(previous, now, droneClearanceRadius))
             {
                 nextGate++; finished = nextGate == gates.Length; Highlight();
+                if (finished) sounds.PlayJackpot(); else sounds.PlayCoin(nextGate);
             }
             previous = now;
             if (drone.armed && rotors != null)

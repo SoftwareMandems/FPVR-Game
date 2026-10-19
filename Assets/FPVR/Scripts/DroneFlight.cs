@@ -16,6 +16,12 @@ namespace FPVR
         public bool droneStyleSticks;
         public bool armed, crashed;
         public Rigidbody Body { get; private set; }
+        public Vector2 Tilt => tilt;
+        public float Climb => climb;
+        // Total motor thrust as a fraction of what's needed to hover (1 = hover, 0 = motors off).
+        public float Thrust { get; private set; }
+        // Rotation the flight controller is asking for, in the drone's local axes (x pitch, y yaw, z roll).
+        public Vector3 LocalTorque { get; private set; }
         Vector3 spawn; Quaternion spawnRotation;
         [Tooltip("Crash speed in metres per second")] public float crashSpeed = 3.5f;
         public System.Action ResetCourse;
@@ -89,17 +95,23 @@ namespace FPVR
         }
         void FixedUpdate()
         {
-            if (!armed || crashed) return;
+            if (!armed || crashed) { Thrust = 0; LocalTorque = Vector3.zero; return; }
             heading += turn * yawSpeed * Time.fixedDeltaTime;
             Quaternion target = Quaternion.Euler(0, heading, 0) * Quaternion.Euler(tilt.y * maxTilt, 0, -tilt.x * maxTilt);
             Quaternion error = target * Quaternion.Inverse(Body.rotation);
             if (error.w < 0) error = new Quaternion(-error.x, -error.y, -error.z, -error.w);
             error.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 torque = Vector3.zero;
             if (axis.sqrMagnitude > .001f && !float.IsNaN(axis.x))
-                Body.AddTorque(axis.normalized * (angle * Mathf.Deg2Rad * 22f) - Body.angularVelocity * 8f, ForceMode.Acceleration);
+            {
+                torque = axis.normalized * (angle * Mathf.Deg2Rad * 22f) - Body.angularVelocity * 8f;
+                Body.AddTorque(torque, ForceMode.Acceleration);
+            }
+            LocalTorque = transform.InverseTransformDirection(torque);
             float verticalAcceleration = Mathf.Clamp(9.81f + (climb * climbSpeed - Body.linearVelocity.y) * 5f, 0, 23);
             float upright = Mathf.Max(.4f, Vector3.Dot(transform.up, Vector3.up));
             Body.AddForce(transform.up * (verticalAcceleration / upright), ForceMode.Acceleration);
+            Thrust = verticalAcceleration / upright / 9.81f;
             // Assisted braking when no movement input is held. This is not acro flight.
             if (tilt.sqrMagnitude < .02f)
                 Body.AddForce(-Vector3.ProjectOnPlane(Body.linearVelocity, Vector3.up) * brake, ForceMode.Acceleration);
@@ -111,6 +123,7 @@ namespace FPVR
             Body.position = spawn; Body.rotation = spawnRotation;
             transform.SetPositionAndRotation(spawn, spawnRotation);
             heading = spawnRotation.eulerAngles.y; armed = crashed = false;
+            Thrust = 0; LocalTorque = Vector3.zero;
             keyMove = Vector2.zero; keyClimb = keyTurn = 0;
             ResetCourse?.Invoke();
         }
