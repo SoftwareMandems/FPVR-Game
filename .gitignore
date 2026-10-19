@@ -107,3 +107,7 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+# Unity Asset Store packages can't be redistributed in a public repo. Each teammate imports these
+# themselves from the Asset Store (see README).
+/[Aa]ssets/Realistic Drone/
+/[Aa]ssets/Realistic Drone.meta

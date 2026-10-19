@@ -10976,6 +10976,7 @@ MonoBehaviour:
   - {fileID: 1526}
   - {fileID: 1538}
   vrHud: {fileID: 1552}
+  droneModel: {fileID: 193520, guid: 979fc5f838d46744aa26f426a3934492, type: 3}
   activeGateColor: {r: 1, g: 0.45, b: 0.1, a: 1}
   passedGateColor: {r: 0.25, g: 0.95, b: 0.5, a: 1}
   droneClearanceRadius: 0.29
