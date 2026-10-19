@@ -11,12 +11,20 @@ namespace FPVR
         public Transform gateContainer;
         public Transform[] rotors;
         public TextMesh vrHud;
+        [Header("Drone model")]
+        [Tooltip("Imported drone model or prefab to show instead of the built-in box drone. Leave empty to keep the boxes.")]
+        public GameObject droneModel;
+        [Tooltip("Size of the model relative to the drone's collider footprint.")]
+        public float droneModelSize = 1f;
+        [Tooltip("Child objects whose names start with this are spun as propellers.")]
+        public string propellerPrefix = "helix";
         [Header("Course appearance")]
         public Color activeGateColor = new Color(1, .45f, .1f);
         public Color passedGateColor = new Color(.25f, .95f, .5f);
         public float droneClearanceRadius = .29f;
         TrainingGate[] gates;
         DroneAudio sounds;
+        Vector3[] rotorHubs; float[] rotorSpin;
         int nextGate; float elapsed; bool finished; Vector3 previous;
         GUIStyle heading, body;
         void Start()
@@ -32,6 +40,7 @@ namespace FPVR
             gates = list.ToArray();
             sounds = drone.GetComponent<DroneAudio>();
             if (!sounds) sounds = drone.gameObject.AddComponent<DroneAudio>();
+            SetUpRotors();
             // Ensure editable TextMesh labels use a supported built-in font and its material.
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             foreach (var label in FindObjectsByType<TextMesh>(FindObjectsSortMode.None))
@@ -44,6 +53,22 @@ namespace FPVR
             Application.targetFrameRate = 90;
             drone.ResetCourse += ResetRun;
             ResetRun();
+        }
+        void SetUpRotors()
+        {
+            if (rotors == null) rotors = new Transform[0];
+            rotorSpin = new float[rotors.Length];
+            for (int i = 0; i < rotors.Length; i++) rotorSpin[i] = i % 2 == 0 ? 1 : -1;
+            if (droneModel)
+            {
+                var swapped = DroneModel.Apply(drone, droneModel, droneModelSize, propellerPrefix);
+                if (swapped.rotors.Length > 0) { rotors = swapped.rotors; rotorSpin = swapped.spin; }
+                else Debug.LogWarning("Drone model has no children starting with '" + propellerPrefix + "', so no propellers will spin.", this);
+            }
+            // Spin each propeller about its own hub along the drone's up axis, whatever its mesh pivot is.
+            rotorHubs = new Vector3[rotors.Length];
+            for (int i = 0; i < rotors.Length; i++)
+                if (rotors[i]) rotorHubs[i] = drone.transform.InverseTransformPoint(DroneModel.Centre(rotors[i]));
         }
         void OnDestroy() { if (drone) drone.ResetCourse -= ResetRun; }
         void ResetRun()
@@ -69,7 +94,8 @@ namespace FPVR
             previous = now;
             if (drone.armed && rotors != null)
                 for (int i = 0; i < rotors.Length; i++)
-                    if (rotors[i]) rotors[i].Rotate(0, (i % 2 == 0 ? 1 : -1) * 1800 * Time.deltaTime, 0);
+                    if (rotors[i])
+                        rotors[i].RotateAround(drone.transform.TransformPoint(rotorHubs[i]), drone.transform.up, rotorSpin[i] * 1800 * Time.deltaTime);
             if (vrHud)
             {
                 vrHud.gameObject.SetActive(pilot.IsVR);
