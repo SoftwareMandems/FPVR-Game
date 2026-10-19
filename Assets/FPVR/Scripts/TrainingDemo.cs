@@ -69,10 +69,10 @@ namespace FPVR
             if (vrHud)
             {
                 vrHud.gameObject.SetActive(pilot.IsVR);
-                if (pilot.IsVR) vrHud.text = Status() + "\nGate " + nextGate + "/" + gates.Length + "   " + elapsed.ToString("F1") + " s\nA: arm   X: reset";
+                if (pilot.IsVR) vrHud.text = Status() + "\nGate " + nextGate + "/" + gates.Length + "   " + elapsed.ToString("F1") + " s\nMove a stick to fly   X: reset";
             }
         }
-        string Status() => drone.crashed ? "CRASHED / RESET TO RETRY" : finished ? "COURSE COMPLETE" : drone.armed ? "FLYING / ASSISTED" : "READY / ARM TO START";
+        string Status() => drone.crashed ? "CRASHED / RESET TO RETRY" : finished ? "COURSE COMPLETE" : drone.armed ? "FLYING / ASSISTED" : "READY / PRESS ANY FLIGHT KEY";
         void OnGUI()
         {
             if(drone==null || pilot==null || gates==null || pilot.IsVR) return;
@@ -89,8 +89,8 @@ namespace FPVR
             if(GUI.Button(new Rect(32,175,175,36),drone.armed?"Disarm":"Arm / start")) { if(!drone.crashed) drone.armed=!drone.armed; }
             if(GUI.Button(new Rect(220,175,195,36),"Reset run")) drone.ResetDrone();
             GUI.Box(new Rect(16,Screen.height-98,790,82),GUIContent.none);
-            GUI.Label(new Rect(30,Screen.height-88,770,30),"WASD: tilt    E / Q: up / down    Left / Right arrows: yaw",body);
-            GUI.Label(new Rect(30,Screen.height-58,770,30),"Space: arm    R: reset    C: FPV / chase    V: recenter VR",body);
+            GUI.Label(new Rect(30,Screen.height-88,770,30),"W / S: forward / back    A / D: turn    Q / E: strafe",body);
+            GUI.Label(new Rect(30,Screen.height-58,770,30),"Space: up    Shift: down    R: reset    C: FPV / chase cam",body);
             if(drone.crashed || finished)
                 GUI.Label(new Rect(Screen.width/2-200,Screen.height/2-30,500,60),drone.crashed?"CRASHED — Press R to retry":"COURSE COMPLETE — "+elapsed.ToString("F1")+" s",heading);
         }
