@@ -10,7 +10,7 @@ namespace FPVR
         public DroneFlight drone;
         public Camera view;
         public Transform trackingOffset;
-        [Tooltip("FPV position relative to the drone's level heading.")]
+        [Tooltip("FPV camera mount in the drone's local axes: X right, Y up, Z forward.")]
         public Vector3 cameraOffset = new Vector3(0, .18f, .24f);
         public Vector3 chaseOffset = new Vector3(0, 2.2f, -4);
         TrackedPoseDriver tracking;
@@ -44,12 +44,17 @@ namespace FPVR
             var k = Keyboard.current;
             if (k != null && k.cKey.wasPressedThisFrame) chase = !chase;
             if (k != null && k.vKey.wasPressedThisFrame && xr) Recenter();
-            Quaternion yaw = Quaternion.Euler(0, drone.transform.eulerAngles.y, 0);
-            transform.SetPositionAndRotation(drone.transform.position + yaw * cameraOffset, yaw);
             if (!xr && chase)
             {
+                Quaternion yaw = Quaternion.Euler(0, drone.transform.eulerAngles.y, 0);
                 transform.position = drone.transform.position + yaw * chaseOffset;
                 transform.LookAt(drone.transform.position + Vector3.up * .1f);
+            }
+            else
+            {
+                // Follow the full drone attitude, including pitch, roll and inverted flight.
+                // VR head tracking remains relative to this mount through its child transforms.
+                transform.SetPositionAndRotation(drone.transform.TransformPoint(cameraOffset), drone.transform.rotation);
             }
         }
         public void Recenter()
