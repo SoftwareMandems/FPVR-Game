@@ -261,25 +261,35 @@ namespace FPVR
             Thrust = hoverForce > .0001f ? actualForce / hoverForce : 0;
         }
 
-        // Inverse X-quad allocation. Differential torque is scaled together at saturation;
-        // shifting collective preserves the torque ratios instead of independently clipping motors.
+        // Keep total thrust set by throttle. Limit pitch/roll first, then fit yaw into the
+        // remaining motor headroom; steering must never raise or lower collective thrust.
         float MixMotors(float collective, Vector3 torque)
         {
             float lever = Mathf.Max(.01f, armLength) / Mathf.Sqrt(2f);
             float pitch = torque.x / (4f * lever), roll = torque.z / (4f * lever);
             float turn = propellerTorqueRatio > .000001f ? torque.y / (4f * propellerTorqueRatio) : 0;
-            motorCommand[0] = -pitch - roll + turn;
-            motorCommand[1] = -pitch + roll - turn;
-            motorCommand[2] = pitch - roll - turn;
-            motorCommand[3] = pitch + roll + turn;
-            float min = motorCommand[0], max = min;
-            for (int i = 1; i < 4; i++) { min = Mathf.Min(min, motorCommand[i]); max = Mathf.Max(max, motorCommand[i]); }
             float limit = Mathf.Max(.01f, maxMotorThrust);
-            float scale = max - min > limit ? limit / (max - min) : 1f;
-            float common = Mathf.Clamp(collective * .25f, -min * scale, limit - max * scale);
-            for (int i = 0; i < 4; i++) motorCommand[i] = Mathf.Clamp(common + motorCommand[i] * scale, 0, limit);
-            return scale;
+            float common = Mathf.Clamp(collective * .25f, 0, limit);
+            motorCommand[0] = -pitch - roll;
+            motorCommand[1] = -pitch + roll;
+            motorCommand[2] = pitch - roll;
+            motorCommand[3] = pitch + roll;
+            float tiltScale = 1f;
+            for (int i = 0; i < 4; i++)
+                tiltScale = Mathf.Min(tiltScale, MotorHeadroom(common, motorCommand[i], limit));
+            for (int i = 0; i < 4; i++) motorCommand[i] = common + motorCommand[i] * tiltScale;
+
+            float yawScale = 1f;
+            for (int i = 0; i < 4; i++)
+                yawScale = Mathf.Min(yawScale, MotorHeadroom(motorCommand[i], -Spin[i] * turn, limit));
+            for (int i = 0; i < 4; i++)
+                motorCommand[i] = Mathf.Clamp(motorCommand[i] - Spin[i] * turn * yawScale, 0, limit);
+            return Mathf.Min(tiltScale, yawScale);
         }
+
+        static float MotorHeadroom(float current, float differential, float limit) => differential > 0 ?
+            Mathf.Clamp01((limit - current) / differential) : differential < 0 ?
+            Mathf.Clamp01(current / -differential) : 1f;
 
         Vector3 MotorPosition(int index)
         {
