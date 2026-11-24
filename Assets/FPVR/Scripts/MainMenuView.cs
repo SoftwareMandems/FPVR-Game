@@ -2,6 +2,7 @@ using System;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem.XR;
+using UnityEngine.UI;
 using UnityEngine.XR;
 
 namespace FPVR
@@ -16,6 +17,8 @@ namespace FPVR
         }
 
         [SerializeField] RectTransform panel;
+        [SerializeField] RawImage background;
+        [SerializeField] RectTransform content;
         [SerializeField] XROrigin origin;
         [SerializeField] TrackedPoseDriver headPose;
         [SerializeField] GameObject controllerPointers;
@@ -24,8 +27,20 @@ namespace FPVR
 
         const InputTrackingState FullPose = InputTrackingState.Position | InputTrackingState.Rotation;
 
+        Vector2 authoredPanelSize;
+        Vector2 authoredContentAnchor;
+        Vector3 authoredContentScale;
+        Rect authoredBackgroundUv;
         float desktopAspect;
         bool aligned;
+
+        void Awake()
+        {
+            authoredPanelSize = panel.rect.size;
+            authoredContentAnchor = content.anchorMin;
+            authoredContentScale = content.localScale;
+            authoredBackgroundUv = background.uvRect;
+        }
 
         void LateUpdate()
         {
@@ -46,12 +61,13 @@ namespace FPVR
 
             if (!headPose.enabled)
             {
+                RestoreWorldLayout();
                 headPose.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 headPose.enabled = true;
                 return;
             }
 
-            // Align the tracking origin once. The panel stays at its saved world pose.
+            // Align the tracking origin once. The artwork and UI stay at the saved world pose.
             if (!aligned)
             {
                 if (!HasFullPose(headPose)) return;
@@ -76,11 +92,42 @@ namespace FPVR
             if (aspect <= 0f || Mathf.Approximately(desktopAspect, aspect)) return;
             desktopAspect = aspect;
 
-            float width = panel.rect.width * panel.lossyScale.x;
-            float height = panel.rect.height * panel.lossyScale.y;
-            float fittedHeight = Mathf.Max(height / 0.84f, width / (aspect * 0.88f));
-            float distance = fittedHeight / (2f * Mathf.Tan(view.fieldOfView * Mathf.Deg2Rad * 0.5f));
+            float width = authoredPanelSize.y * aspect;
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+
+            // Shift the column above the drone as horizontal space runs out.
+            float compact = Mathf.InverseLerp(1.30f, 1.0f, aspect);
+            var anchor = new Vector2(authoredContentAnchor.x, Mathf.Lerp(authoredContentAnchor.y, 0.74f, compact));
+            content.anchorMin = content.anchorMax = anchor;
+            float columnWidth = width * Mathf.Lerp(0.36f, 0.79f, compact);
+            float contentWidth = content.rect.width * authoredContentScale.x;
+            content.localScale = authoredContentScale * Mathf.Min(1f, columnWidth / contentWidth);
+
+            FitBackground(aspect, compact);
+
+            float height = authoredPanelSize.y * panel.lossyScale.y;
+            float distance = height / (2f * Mathf.Tan(view.fieldOfView * Mathf.Deg2Rad * 0.5f));
             view.transform.SetPositionAndRotation(panel.position - panel.forward * distance, panel.rotation);
+        }
+
+        void FitBackground(float aspect, float compact)
+        {
+            Texture texture = background.mainTexture;
+            float imageAspect = (float)texture.width / texture.height;
+            float width = Mathf.Min(1f, aspect / imageAspect);
+            float height = Mathf.Min(1f, imageAspect / aspect);
+
+            // Bias the crop toward the drone and keep the image scale uniform.
+            float cropBias = Mathf.Lerp(0.88f, 0.72f, compact);
+            background.uvRect = new Rect((1f - width) * cropBias, (1f - height) * 0.45f, width, height);
+        }
+
+        void RestoreWorldLayout()
+        {
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, authoredPanelSize.x);
+            content.anchorMin = content.anchorMax = authoredContentAnchor;
+            content.localScale = authoredContentScale;
+            background.uvRect = authoredBackgroundUv;
         }
 
         static bool HasFullPose(TrackedPoseDriver driver)

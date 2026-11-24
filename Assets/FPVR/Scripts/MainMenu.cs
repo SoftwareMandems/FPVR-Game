@@ -14,7 +14,7 @@ namespace FPVR
 
         public void Play()
         {
-            if (loading) return;
+            if (loading) return; // Prevent double-clicking the button while the scene is loading. ignores clicks after
 
             int trainingIndex = SceneUtility.GetBuildIndexByScenePath(trainingScenePath);
             if (trainingIndex < 0)
