@@ -31,6 +31,7 @@ namespace FPVR
         {
             if (!drone || !pilot || !gateContainer)
             { Debug.LogError("Training Manager: assign Drone, Pilot and Gate Container.", this); enabled = false; return; }
+            if (pilot.view) SceneVisuals.Apply(pilot.view);
             var list = new System.Collections.Generic.List<TrainingGate>();
             foreach (Transform child in gateContainer)
             {
