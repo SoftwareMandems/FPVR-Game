@@ -283,12 +283,11 @@ namespace FPVR.Tutorials
 
         string Controls()
         {
-            return "Keyboard: Space/Shift = throttle; W/S = pitch; Q/E = roll; A/D = yaw.\n" +
-                (drone.droneStyleSticks
-                ? "Gamepad / Quest Mode 2: left stick up/down = throttle, left/right = yaw; right stick up/down = pitch, left/right = roll."
-                : "Gamepad / Quest: left stick up/down = pitch, left/right = roll; right stick up/down = throttle, left/right = yaw.") +
-                "\nTriggers: right = up, left = down. R / gamepad Y / Quest X = Restart (clears attempt).\n" +
-                "P/Esc / gamepad Start / Quest B = pause." + (regularCourses ? "" : " Use small inputs; release movement to brake.");
+            return "Use Space/Shift for throttle, W/S for pitch, Q/E for roll, and A/D for yaw.\n" +
+                "Gamepad and Quest use Mode 2. On the left stick, up/down controls throttle and left/right controls yaw. " +
+                "On the right stick, up/down controls pitch and left/right controls roll.\n" +
+                "Restart with R, gamepad Y, or Quest X to clear the attempt.\n" +
+                "Pause with P, Esc, gamepad Start, or Quest B." + (regularCourses ? "" : " Use small inputs.");
         }
         void Present()
         {

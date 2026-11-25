@@ -39,15 +39,15 @@ The motors start as soon as you touch any flight control.
 
 | Action | Keyboard | Gamepad | Quest controllers |
 |---|---|---|---|
-| Forward / back | W / S (or ↑ ↓) | Left stick | Left thumbstick |
-| Turn | A / D (or ← →) | Right stick left/right | Right thumbstick left/right |
-| Slide sideways | Q / E | Left stick | Left thumbstick |
-| Up / down | Space / Shift | Right stick up/down, or triggers | Right thumbstick up/down, or triggers |
+| Pitch | W / S (or ↑ ↓) | Right stick up/down | Right thumbstick up/down |
+| Yaw | A / D (or ← →) | Left stick left/right | Left thumbstick left/right |
+| Roll | Q / E | Right stick left/right | Right thumbstick left/right |
+| Throttle | Space up, Shift or Left Ctrl down | Left stick up/down | Left thumbstick up/down |
 | Reset | R | Y | X |
 | Chase camera (non-VR) | C | | |
 | Recenter VR view | V | | |
 
-To use real drone "Mode 2" sticks instead, tick **Drone Style Sticks** on the Drone object.
+Gamepad and Quest controllers use the Mode 2 stick layout.
 
 ## Playing in VR (Quest Link)
 

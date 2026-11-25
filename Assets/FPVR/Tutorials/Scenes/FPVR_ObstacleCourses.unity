@@ -251,7 +251,6 @@ MonoBehaviour:
   yawSpeed: 85
   keyResponse: 5
   brake: 2.5
-  droneStyleSticks: 0
   armed: 0
   crashed: 0
   crashSpeed: 3.5
