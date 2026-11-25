@@ -5766,7 +5766,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1288
 MeshRenderer:
@@ -5780,7 +5780,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1289
 GameObject:
@@ -6287,7 +6287,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1315
 MeshRenderer:
@@ -6301,7 +6301,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1316
 GameObject:
@@ -6808,7 +6808,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1342
 MeshRenderer:
@@ -6822,7 +6822,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1343
 GameObject:
@@ -7329,7 +7329,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1369
 MeshRenderer:
@@ -7343,7 +7343,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1370
 GameObject:
@@ -7850,7 +7850,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1396
 MeshRenderer:
@@ -7864,7 +7864,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1397
 GameObject:
@@ -8371,7 +8371,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1423
 MeshRenderer:
@@ -8385,7 +8385,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1424
 GameObject:
@@ -8892,7 +8892,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1450
 MeshRenderer:
@@ -8906,7 +8906,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1451
 GameObject:
@@ -9413,7 +9413,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1477
 MeshRenderer:
@@ -9427,7 +9427,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1478
 GameObject:
@@ -10907,7 +10907,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1553
 MeshRenderer:
@@ -10921,7 +10921,7 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0
 --- !u!1 &1554
 GameObject:

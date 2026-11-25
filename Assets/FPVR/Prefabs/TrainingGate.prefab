@@ -505,7 +505,7 @@ TextMesh:
   m_FontSize: 64
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 12800000, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &1288
 MeshRenderer:
@@ -519,5 +519,5 @@ MeshRenderer:
   m_ReceiveShadows: 0
   m_RenderingLayerMask: 1
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f0000000000000000, type: 0}
+  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
   m_SortingOrder: 0

@@ -44,7 +44,7 @@ namespace FPVR
             SetUpRotors();
             // Ensure editable TextMesh labels use a supported built-in font and its material.
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            foreach (var label in FindObjectsByType<TextMesh>(FindObjectsSortMode.None))
+            foreach (var label in FindObjectsByType<TextMesh>())
             {
                 if (label.gameObject.scene != gameObject.scene) continue;
                 label.font = font;
