@@ -15,9 +15,11 @@ namespace FPVR.Tutorials
         public readonly string[] Instructions;
         public readonly Vector3 Finish;
         public readonly bool FreeFlight;
+        public readonly ObstacleCourseLayout Layout;
 
         public TutorialCourse(string id, string name, string environment, TutorialDifficulty difficulty,
-            string introduction, Vector3[] checkpoints, Vector3 finish, string[] instructions, bool freeFlight = false)
+            string introduction, Vector3[] checkpoints, Vector3 finish, string[] instructions, bool freeFlight = false,
+            ObstacleCourseLayout layout = null)
         {
             Id = id;
             Name = name;
@@ -30,6 +32,7 @@ namespace FPVR.Tutorials
             Finish = finish;
             Instructions = instructions;
             FreeFlight = freeFlight;
+            Layout = layout;
         }
     }
 

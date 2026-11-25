@@ -51,6 +51,40 @@ namespace FPVR.Tutorials.EditorTools
             Require(difficulties.Count == 3, "All three difficulties must be available.");
         }
 
+        internal static void CheckObstacleCatalog()
+        {
+            var ids = new HashSet<string>();
+            foreach (var activity in TutorialCourseCatalog.All) ids.Add(activity.Id);
+            var environments = new HashSet<string>();
+            var difficulties = new HashSet<TutorialDifficulty>();
+            foreach (var course in ObstacleCourseCatalog.All)
+            {
+                Require(ids.Add(course.Id), "Regular course IDs must be distinct from practice activities.");
+                Require(!course.FreeFlight && course.Instructions.Length == 0, "Regular courses cannot be guided practice.");
+                Require(course.Checkpoints.Length >= 2 && course.Layout != null, "Every course needs a layout and ordered checkpoints.");
+                Require(course.Layout.Opening.x > .6f && course.Layout.Opening.y > .6f, "The drone must fit through the gates.");
+                environments.Add(course.Environment);
+                difficulties.Add(course.Difficulty);
+                var from = course.Start;
+                for (int i = 0; i <= course.Checkpoints.Length; i++)
+                {
+                    var to = i == course.Checkpoints.Length ? course.Finish : course.Checkpoints[i];
+                    Require(to.z > from.z + 1 && to.z < 90 && Mathf.Abs(to.x) < 90 && to.y > course.Layout.Opening.y,
+                        course.Name + " needs distinct, forward-facing gates above ground and inside flight bounds.");
+                    foreach (var obstacle in course.Layout.Obstacles)
+                    {
+                        var bounds = new Bounds(obstacle.Position, obstacle.Size);
+                        bounds.Expand(.7f);
+                        var ray = new Ray(from, (to - from).normalized);
+                        Require(!bounds.Contains(from) && (!bounds.IntersectRay(ray, out float distance) || distance > Vector3.Distance(from, to)),
+                            course.Name + " has an obstacle in the direct flight corridor: " + obstacle.Name);
+                    }
+                    from = to;
+                }
+            }
+            Require(difficulties.Count == 3 && environments.Count >= 2, "Regular courses need three difficulties across distinct environments.");
+        }
+
         static void CheckOrderAndCompletion()
         {
             var attempt = new TutorialAttempt(2);

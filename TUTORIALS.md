@@ -1,4 +1,22 @@
-# Tutorial levels
+# Tutorials and obstacle courses
+
+## Regular obstacle courses
+
+Launch **FPVR > Courses > Play Obstacle Courses** in Unity. The regular scene has its own course selector and briefing. Every level is available immediately. During flight, the HUD shows the next checkpoint, active flight times, altitude, and crash count.
+
+| Course | Difficulty | Route |
+| --- | --- | --- |
+| Meadow Slalom | Introductory | Five wide gates around alternating field barriers |
+| Hangar Elevation | Intermediate | Seven gates at varied heights, with cargo stacks and an overhead beam |
+| Canyon Circuit | Advanced | Nine narrower gates through rock pillars, ridges, and a high bridge |
+
+Pass the highlighted checkpoints in order and then cross the separate finish. Regular courses use the same pause, recovery, scoring, review, and local result rules described below. Edit their routes in `Assets/FPVR/Tutorials/Runtime/ObstacleCourseCatalog.cs`.
+
+The scene is `Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity`. To connect it to a build, use **FPVR > Courses > Add Obstacle Courses to Build List**, have the main menu load `FPVR_ObstacleCourses`, and set `mainMenuScene` on the scene's session to the registered menu scene. Until that integration is configured, **Choose another level** returns to the course selector.
+
+Repeat the scene and route clearance checks with **FPVR > Courses > Validate Obstacle Courses**. Run **FPVR > Courses > Run Play Mode Smoke Checks** to exercise all three layouts, physical obstacle collisions, checkpoint order, recovery, finish, review, and retry.
+
+## Guided practice
 
 The tutorial feature is isolated from the existing demo, main menu, and flight-control implementation. Open `Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity`, or use **FPVR > Tutorials > Open Tutorial Scene**. Use **FPVR > Tutorials > Play Tutorial Scene** to test it: this temporarily overrides the editor's play-start scene so the existing demo startup helper does not redirect play, then restores that setting after play.
 

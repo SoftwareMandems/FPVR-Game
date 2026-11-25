@@ -12,6 +12,7 @@ namespace FPVR.Tutorials.EditorTools
     public static class TutorialEditor
     {
         public const string ScenePath = "Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity";
+        public const string ObstacleScenePath = "Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity";
         const string PreviousStartKey = "FPVR.TutorialPreviousStart";
         static TutorialEditor()
         {
@@ -24,29 +25,44 @@ namespace FPVR.Tutorials.EditorTools
         }
 
         [MenuItem("FPVR/Tutorials/Open Tutorial Scene")]
-        public static void Open()
+        public static void Open() => OpenScene(ScenePath);
+
+        [MenuItem("FPVR/Courses/Open Obstacle Courses")]
+        public static void OpenObstacleCourses() => OpenScene(ObstacleScenePath);
+
+        static void OpenScene(string path)
         {
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) EditorSceneManager.OpenScene(ScenePath);
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) EditorSceneManager.OpenScene(path);
         }
 
         [MenuItem("FPVR/Tutorials/Play Tutorial Scene")]
-        public static void Play()
+        public static void Play() => PlayScene(ScenePath);
+
+        [MenuItem("FPVR/Courses/Play Obstacle Courses")]
+        public static void PlayObstacleCourses() => PlayScene(ObstacleScenePath);
+
+        static void PlayScene(string path)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             SessionState.SetString(PreviousStartKey, AssetDatabase.GetAssetPath(EditorSceneManager.playModeStartScene));
             SessionState.SetBool(PreviousStartKey + ".active", true);
-            EditorSceneManager.playModeStartScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
+            EditorSceneManager.playModeStartScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
             EditorApplication.isPlaying = true;
         }
 
         // Opt-in, so the tutorial branch doesn't rewrite the menu owner's build/startup settings.
         [MenuItem("FPVR/Tutorials/Add Tutorial Scene to Build List")]
-        public static void RegisterScene()
+        public static void RegisterScene() => RegisterScene(ScenePath);
+
+        [MenuItem("FPVR/Courses/Add Obstacle Courses to Build List")]
+        public static void RegisterObstacleScene() => RegisterScene(ObstacleScenePath);
+
+        static void RegisterScene(string path)
         {
             var scenes = EditorBuildSettings.scenes;
-            int index = Array.FindIndex(scenes, scene => scene.path == ScenePath);
+            int index = Array.FindIndex(scenes, scene => scene.path == path);
             if (index >= 0) { scenes[index].enabled = true; EditorBuildSettings.scenes = scenes; }
-            else EditorBuildSettings.scenes = scenes.Concat(new[] { new EditorBuildSettingsScene(ScenePath, true) }).ToArray();
+            else EditorBuildSettings.scenes = scenes.Concat(new[] { new EditorBuildSettingsScene(path, true) }).ToArray();
         }
 
         // Batch entry point used to generate the committed scene from the existing drone/rig.
@@ -64,6 +80,18 @@ namespace FPVR.Tutorials.EditorTools
             material.shader = Shader.Find("FPVR/Tutorial Overlay");
             material.color = new Color(.025f, .045f, .065f);
             EditorUtility.SetDirty(material); AssetDatabase.SaveAssets();
+            BuildFlightScene(ScenePath, false);
+            Validate();
+        }
+
+        public static void BuildObstacleScene()
+        {
+            BuildFlightScene(ObstacleScenePath, true);
+            ValidateObstacleCourses();
+        }
+
+        static void BuildFlightScene(string path, bool regularCourses)
+        {
             EditorSceneManager.OpenScene("Assets/FPVR/Scenes/FPVR_Demo.unity");
             var demo = UnityEngine.Object.FindAnyObjectByType<TrainingDemo>();
             if (!demo) throw new InvalidOperationException("Demo rig template is missing.");
@@ -75,33 +103,48 @@ namespace FPVR.Tutorials.EditorTools
                 if (root.name == "Environment") UnityEngine.Object.DestroyImmediate(root);
             drone.transform.SetPositionAndRotation(TutorialCourseCatalog.All[0].Start, Quaternion.identity);
             drone.gameObject.AddComponent<TutorialContact>();
-            var session = new GameObject("Tutorial Session").AddComponent<TutorialSession>();
+            var session = new GameObject(regularCourses ? "Obstacle Course Session" : "Tutorial Session").AddComponent<TutorialSession>();
             session.drone = drone; session.pilot = pilot; session.rotors = rotors;
-            Directory.CreateDirectory("Assets/FPVR/Tutorials/Scenes");
-            if (!EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), ScenePath)) throw new IOException("Could not save tutorial scene");
+            session.regularCourses = regularCourses;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            if (!EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), path)) throw new IOException("Could not save " + path);
             AssetDatabase.Refresh();
-            Validate();
         }
 
         [MenuItem("FPVR/Tutorials/Validate Tutorial Content")]
         public static void Validate()
         {
             TutorialModelChecks.Run();
-            var scene = SceneManager.GetSceneByPath(ScenePath);
+            ValidateScene(ScenePath, false);
+            Debug.Log("TUTORIAL SCENE VALIDATION PASSED");
+        }
+
+        [MenuItem("FPVR/Courses/Validate Obstacle Courses")]
+        public static void ValidateObstacleCourses()
+        {
+            TutorialModelChecks.CheckObstacleCatalog();
+            ValidateScene(ObstacleScenePath, true);
+            Debug.Log("OBSTACLE COURSE SCENE VALIDATION PASSED");
+        }
+
+        static void ValidateScene(string path, bool regularCourses)
+        {
+            var scene = SceneManager.GetSceneByPath(path);
             bool wasLoaded = scene.IsValid() && scene.isLoaded;
-            if (!wasLoaded) scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            if (!wasLoaded) scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
             try
             {
                 var sessions = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<TutorialSession>()).ToArray();
                 if (sessions.Length != 1 || !sessions[0].drone || !sessions[0].pilot || !sessions[0].pilot.view)
                     throw new InvalidOperationException("Flight scene references are incomplete.");
+                if (sessions[0].regularCourses != regularCourses)
+                    throw new InvalidOperationException("Flight scene has the wrong activity catalog.");
                 foreach (var root in scene.GetRootGameObjects())
                     foreach (var transform in root.GetComponentsInChildren<Transform>(true))
                         if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(transform.gameObject) != 0)
                             throw new InvalidOperationException("Missing script: " + transform.name);
                 if (scene.GetRootGameObjects().Any(root => root.GetComponentInChildren<TrainingDemo>()))
                     throw new InvalidOperationException("Flight scene must have exactly one coordinator.");
-                Debug.Log("TUTORIAL SCENE VALIDATION PASSED");
             }
             finally { if (!wasLoaded) EditorSceneManager.CloseScene(scene, true); }
         }

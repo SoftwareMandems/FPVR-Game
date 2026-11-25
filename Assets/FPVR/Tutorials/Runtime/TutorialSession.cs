@@ -5,13 +5,15 @@ using UnityEngine.XR;
 
 namespace FPVR.Tutorials
 {
-    // Coordinates tutorials without owning the shared menu, input mapping, or flight physics.
+    // Runs both guided practice and regular courses using the same flight and attempt rules.
     [DefaultExecutionOrder(-100)]
     public sealed class TutorialSession : MonoBehaviour
     {
         public DroneFlight drone;
         public DroneView pilot;
         public Transform[] rotors;
+        [Tooltip("Show the regular obstacle course catalog instead of guided practice.")]
+        public bool regularCourses;
         [Tooltip("Set to the main menu scene when integrating. Empty returns to level selection.")]
         public string mainMenuScene;
         [Tooltip("The active local profile. Guest practice works without an account.")]
@@ -20,6 +22,7 @@ namespace FPVR.Tutorials
         public TutorialCourse Course { get; private set; }
         public bool Selecting => Attempt == null;
         public bool Ready => hud != null;
+        TutorialCourse[] Courses => regularCourses ? ObstacleCourseCatalog.All : TutorialCourseCatalog.All;
         TutorialWorld world;
         TutorialHud hud;
         TutorialInput input;
@@ -51,14 +54,14 @@ namespace FPVR.Tutorials
 
         public void ShowSelection()
         {
-            CancelWarmup(); Attempt = null; Course = TutorialCourseCatalog.All[0];
+            CancelWarmup(); Attempt = null; Course = Courses[0];
             selected = 0; notice = ""; world.Load(Course); world.Highlight(0); MoveDrone(Course.Start, false); Present();
         }
 
         public void SelectCourse(int index)
         {
-            if (index < 0 || index >= TutorialCourseCatalog.All.Length) throw new ArgumentOutOfRangeException(nameof(index));
-            CancelWarmup(); Course = TutorialCourseCatalog.All[index];
+            if (index < 0 || index >= Courses.Length) throw new ArgumentOutOfRangeException(nameof(index));
+            CancelWarmup(); Course = Courses[index];
             Attempt = new TutorialAttempt(Course.Checkpoints.Length, Course.FreeFlight);
             selected = consecutiveCrashes = 0; notice = saveMessage = "";
             world.Load(Course); world.Highlight(0); MoveDrone(Course.Start, false); Present();
@@ -199,7 +202,11 @@ namespace FPVR.Tutorials
         void RegisterCrash()
         {
             Attempt.Crash(); Suspend(); consecutiveCrashes++; selected = 0;
-            notice = consecutiveCrashes >= 3 ? "Three crashes in this section. Try Free flight practice from Choose another level." : "No rush. Respawn keeps progress; Restart begins a new attempt.";
+            if (consecutiveCrashes >= 3)
+                notice = regularCourses ? "Three crashes in this section. Free flight can help you practise the manoeuvre."
+                    : "Three crashes in this section. Try Free flight practice from Choose another level.";
+            else
+                notice = regularCourses ? "Choose a recovery option." : "No rush. Respawn keeps progress; Restart begins a new attempt.";
         }
 
         string[] MenuOptions()
@@ -207,7 +214,7 @@ namespace FPVR.Tutorials
             if (warmup) return new[] { "Cancel" };
             if (Attempt == null)
             {
-                var courses = TutorialCourseCatalog.All;
+                var courses = Courses;
                 var options = new string[courses.Length + (HasMainMenu ? 1 : 0)];
                 for (int i = 0; i < courses.Length; i++)
                 {
@@ -250,7 +257,7 @@ namespace FPVR.Tutorials
             selected = 0;
             if (Attempt == null)
             {
-                if (index < TutorialCourseCatalog.All.Length) SelectCourse(index);
+                if (index < Courses.Length) SelectCourse(index);
                 else Exit();
                 return;
             }
@@ -281,7 +288,7 @@ namespace FPVR.Tutorials
                 ? "Gamepad / Quest Mode 2: left stick up/down = throttle, left/right = yaw; right stick up/down = pitch, left/right = roll."
                 : "Gamepad / Quest: left stick up/down = pitch, left/right = roll; right stick up/down = throttle, left/right = yaw.") +
                 "\nTriggers: right = up, left = down. R / gamepad Y / Quest X = Restart (clears attempt).\n" +
-                "P/Esc / gamepad Start / Quest B = pause. Use small inputs; release movement to brake.";
+                "P/Esc / gamepad Start / Quest B = pause." + (regularCourses ? "" : " Use small inputs; release movement to brake.");
         }
         void Present()
         {
@@ -290,8 +297,9 @@ namespace FPVR.Tutorials
             hud.Flying = Attempt != null && Attempt.Phase == TutorialPhase.Flying;
             if (Attempt == null)
             {
-                hud.Title = "FPVR / SIMPLE TUTORIALS";
-                hud.Body = "Choose any activity. All levels are unlocked. Start with Free flight if you are new.\n\n" +
+                hud.Title = regularCourses ? "FPVR / OBSTACLE COURSES" : "FPVR / SIMPLE TUTORIALS";
+                hud.Body = (regularCourses ? "Choose a course. All difficulties are available."
+                    : "Choose any activity. All levels are unlocked. Start with Free flight if you are new.") + "\n\n" +
                     "Stay seated or stand still in a clear play area. Pause if you feel uncomfortable. Take regular breaks.\n" +
                     "This simulator supports practice; it does not replace real flight training or local drone rules.";
             }
@@ -299,20 +307,22 @@ namespace FPVR.Tutorials
             { hud.Title = "READY TO FLY"; hud.Body = notice; }
             else if (Attempt.Phase == TutorialPhase.Guide)
             {
-                hud.Title = Course.Name + " / CONTROL GUIDE";
+                hud.Title = Course.Name + (regularCourses ? " / COURSE BRIEFING" : " / CONTROL GUIDE");
                 hud.Body = Course.Introduction + "\n\n" + Controls() + "\n\nStay stationary. Pause or leave at any time.";
             }
             else if (hud.Flying)
             {
                 hud.Title = Course.Name;
-                string objective = Course.Instructions[Mathf.Min(Attempt.Passed, Course.Instructions.Length - 1)];
+                string objective = regularCourses
+                    ? (Attempt.Passed < Attempt.CheckpointCount ? "Next checkpoint: " + (Attempt.Passed + 1) : "Next: Finish")
+                    : Course.Instructions[Mathf.Min(Attempt.Passed, Course.Instructions.Length - 1)];
                 hud.Body = objective + "\n" +
                     (Course.FreeFlight ? "Free practice: no timer or score." : "Checkpoints " + Attempt.Passed + "/" + Attempt.CheckpointCount + "   Total " + Attempt.TotalTime.ToString("F1") + "s   Section " + Attempt.SectionTime.ToString("F1") + "s   Crashes " + Attempt.Crashes) +
                     "\nAltitude " + drone.transform.position.y.ToString("F1") + "m   P / Start / Quest B: pause and controls";
             }
             else if (Attempt.Phase == TutorialPhase.Complete)
             {
-                hud.Title = "TUTORIAL COMPLETE / " + Course.Name;
+                hud.Title = (regularCourses ? "COURSE COMPLETE / " : "TUTORIAL COMPLETE / ") + Course.Name;
                 hud.Body = "Time " + Attempt.TotalTime.ToString("F1") + "s   Checkpoints " + Attempt.Passed + "/" + Attempt.CheckpointCount +
                     "\nCrashes " + Attempt.Crashes + "   Score " + Attempt.Score + "   " + Attempt.Rating +
                     "\nScore = max(0, 1000 - floor(seconds) - 100 x crashes).\nRatings are game feedback, not a pilot qualification.\n\n" + saveMessage;

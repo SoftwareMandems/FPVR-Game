@@ -35,14 +35,19 @@ namespace FPVR.Tutorials.EditorTools
         }
 
         [MenuItem("FPVR/Tutorials/Run Play Mode Smoke Checks")]
-        public static void Run()
+        public static void Run() => RunScene(TutorialEditor.ScenePath, false);
+
+        [MenuItem("FPVR/Courses/Run Play Mode Smoke Checks")]
+        public static void RunObstacleCourses() => RunScene(TutorialEditor.ObstacleScenePath, true);
+
+        static void RunScene(string scenePath, bool regularCourses)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
-                throw new InvalidOperationException("Start tutorial smoke checks from Edit Mode.");
+                throw new InvalidOperationException("Start the course smoke checks from Edit Mode.");
             if (SessionState.GetBool(Key + "active", false))
-                throw new InvalidOperationException("Tutorial smoke checks are already active.");
-            var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(TutorialEditor.ScenePath);
-            if (!scene) throw new InvalidOperationException("Build the tutorial scene before running its smoke checks.");
+                throw new InvalidOperationException("Course smoke checks are already active.");
+            var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
+            if (!scene) throw new InvalidOperationException("Course scene missing: " + scenePath);
             // Save only the two exact files this test can overwrite, and retain snapshots
             // through the Play Mode domain reload. No user history is left changed.
             Backup(TutorialResultStore.Path, "results");
@@ -50,6 +55,7 @@ namespace FPVR.Tutorials.EditorTools
             SessionState.SetString(Key + "previousStart", AssetDatabase.GetAssetPath(EditorSceneManager.playModeStartScene));
             SessionState.SetInt(Key + "result", -1);
             SessionState.SetFloat(Key + "started", (float)EditorApplication.timeSinceStartup);
+            SessionState.SetBool(Key + "regularCourses", regularCourses);
             SessionState.SetBool(Key + "active", true);
             EditorSceneManager.playModeStartScene = scene;
             EditorApplication.isPlaying = true;
@@ -78,14 +84,16 @@ namespace FPVR.Tutorials.EditorTools
         static void StateChanged(PlayModeStateChange state)
         {
             if (!SessionState.GetBool(Key + "active", false)) return;
+            bool regularCourses = SessionState.GetBool(Key + "regularCourses", false);
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
-                steps.Clear(); waiting = null; steps.Push(CheckScene());
+                steps.Clear(); waiting = null;
+                steps.Push(regularCourses ? CheckObstacleCourses() : CheckScene());
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
             {
                 int result = SessionState.GetInt(Key + "result", -1);
-                if (result < 0) { Debug.LogError("Tutorial smoke checks were interrupted."); result = 1; }
+                if (result < 0) { Debug.LogError("Course smoke checks were interrupted."); result = 1; }
                 try { Restore("results"); Restore("temporary"); }
                 catch (Exception exception) { Debug.LogException(exception); result = 1; }
                 EditorSceneManager.playModeStartScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(
@@ -94,8 +102,9 @@ namespace FPVR.Tutorials.EditorTools
                 SessionState.EraseInt(Key + "result");
                 SessionState.EraseFloat(Key + "started");
                 SessionState.EraseString(Key + "previousStart");
+                SessionState.EraseBool(Key + "regularCourses");
                 steps.Clear(); waiting = null;
-                if (result == 0) Debug.Log("TUTORIAL PLAY CHECKS PASSED");
+                if (result == 0) Debug.Log(regularCourses ? "OBSTACLE COURSE PLAY CHECKS PASSED" : "TUTORIAL PLAY CHECKS PASSED");
                 if (Application.isBatchMode) EditorApplication.Exit(result);
             }
         }
@@ -215,9 +224,10 @@ namespace FPVR.Tutorials.EditorTools
         {
             // Move around the outside of every gate before approaching its front.
             // A straight teleport to a later gate could legitimately pass earlier ones.
-            Place(session, new Vector3(20, gate.y, session.drone.transform.position.z));
+            float outsideRoute = session.regularCourses ? 26f : 20f;
+            Place(session, new Vector3(outsideRoute, gate.y, session.drone.transform.position.z));
             yield return NextFrame();
-            Place(session, new Vector3(20, gate.y, gate.z - .5f));
+            Place(session, new Vector3(outsideRoute, gate.y, gate.z - .5f));
             yield return NextFrame();
             Place(session, gate - Vector3.forward * .5f);
             yield return NextFrame();
@@ -404,9 +414,140 @@ namespace FPVR.Tutorials.EditorTools
             Require(session.Selecting, "The activity menu must remain reachable without restarting the application.");
         }
 
+        static IEnumerator CheckObstacleCourses()
+        {
+            TutorialSession session = null;
+            yield return new Await(() => (session = UnityEngine.Object.FindAnyObjectByType<TutorialSession>()) && session.Ready,
+                "obstacle course scene initialization");
+            var hud = session.GetComponent<TutorialHud>();
+            var world = session.GetComponent<TutorialWorld>();
+            Require(session.regularCourses && session.Selecting && session.Attempt == null,
+                "The obstacle scene must open at its own course selector.");
+            Require(hud.Title.IndexOf("tutorial", StringComparison.OrdinalIgnoreCase) < 0,
+                "The obstacle scene must use its own selector title.");
+            Require(ObstacleCourseCatalog.All.Length == 3, "Three regular courses must be present.");
+            Capture("obstacle-course-selection");
+
+            for (int i = 0; i < ObstacleCourseCatalog.All.Length; i++)
+            {
+                var course = ObstacleCourseCatalog.All[i];
+                Require(hud.Options.Length > i && hud.Options[i].Contains(course.Name) &&
+                    hud.Options[i].Contains(course.Difficulty.ToString()), "Every course must be listed with its difficulty.");
+                session.Choose(i);
+                Require(session.Course == course && session.Attempt.Phase == TutorialPhase.Guide &&
+                    !session.drone.enabled && session.Attempt.TotalTime == 0,
+                    "The selected course must open its briefing with flight stopped.");
+                Require(!course.FreeFlight && course.Checkpoints.Length >= 5 && course.Instructions.Length == 0,
+                    "Regular courses must have substantive checkpoint routes without lesson instructions.");
+                Require(world.Gates.Length == course.Checkpoints.Length && world.Finish &&
+                    world.Finish.transform.position == course.Finish,
+                    "The layout must build its full sequence and separate finish.");
+                foreach (var gate in world.Gates)
+                    Require(gate.opening == course.Layout.Opening, "Gate openings must match the selected route.");
+                var obstacle = CheckObstacles(world, course);
+                session.Choose(0);
+                yield return Flying(session);
+                yield return NextFrame();
+                Require(hud.Flying && hud.Body.Contains("Checkpoints") && session.Attempt.TotalTime > 0,
+                    "The in-flight HUD must show course progress and the active timer.");
+                Capture(course.Id);
+
+                // Keep this collider check dynamic. Synthetic gate crossings below are kinematic.
+                var body = session.drone.Body;
+                var droneCollider = session.drone.GetComponent<Collider>();
+                var contactPosition = obstacle.bounds.center - Vector3.forward *
+                    (obstacle.bounds.extents.z + droneCollider.bounds.extents.z - .05f);
+                Place(session, new Vector3(26f, contactPosition.y, session.drone.transform.position.z));
+                yield return NextFrame();
+                Place(session, new Vector3(26f, contactPosition.y, contactPosition.z));
+                yield return NextFrame();
+                body.position = contactPosition;
+                session.drone.transform.position = contactPosition;
+                body.isKinematic = false;
+                session.drone.armed = false;
+                session.drone.enabled = true;
+                body.linearVelocity = Vector3.forward * .1f;
+                body.WakeUp();
+                Physics.SyncTransforms();
+                yield return new Await(() => session.Attempt.Phase == TutorialPhase.Crashed,
+                    "physical collision with a route obstacle in " + course.Name, 2);
+                Require(session.Attempt.Crashes == 1 && session.Attempt.Passed == 0,
+                    "A physical obstacle hit must produce one crash without checkpoint credit.");
+                session.Respawn();
+                yield return Flying(session);
+                Freeze(session);
+                Require(Vector3.Distance(session.drone.transform.position, course.Start) < .1f,
+                    "A crash before checkpoint one must respawn at the course start.");
+
+                yield return Cross(session, course.Checkpoints[1]);
+                yield return Cross(session, course.Finish);
+                Require(session.Attempt.Passed == 0 && session.Attempt.Phase == TutorialPhase.Flying,
+                    "Skipping checkpoints and crossing the finish early must leave progress unchanged.");
+                yield return Cross(session, course.Checkpoints[0]);
+                Require(session.Attempt.Passed == 1, "The expected checkpoint must count.");
+
+                session.drone.crashed = true;
+                yield return new Await(() => session.Attempt.Phase == TutorialPhase.Crashed, "checkpoint recovery menu");
+                float total = session.Attempt.TotalTime;
+                yield return Delay(.1);
+                Require(total == session.Attempt.TotalTime && session.Attempt.Crashes == 2,
+                    "The crash menu must freeze timing and register the second crash once.");
+                session.Respawn();
+                yield return Flying(session);
+                Freeze(session);
+                Require(session.Attempt.Passed == 1 && session.Attempt.Crashes == 2 &&
+                    session.Attempt.TotalTime >= total && session.Attempt.SectionTime < .25f &&
+                    Vector3.Distance(session.drone.transform.position, course.Checkpoints[0]) < .1f,
+                    "Checkpoint respawn must preserve progress and penalties and reset section time.");
+
+                for (int checkpoint = 1; checkpoint < course.Checkpoints.Length; checkpoint++)
+                {
+                    yield return Cross(session, course.Checkpoints[checkpoint]);
+                    Require(session.Attempt.Passed == checkpoint + 1, "The regular route must be flyable in checkpoint order.");
+                }
+                Require(session.Attempt.Phase == TutorialPhase.Flying, "The final checkpoint is not the finish.");
+                yield return Cross(session, course.Finish);
+                Require(session.Attempt.Phase == TutorialPhase.Complete && session.drone.Body.isKinematic,
+                    "The separate finish must stop the attempt.");
+                Require(hud.Title.IndexOf("tutorial", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    (hud.Title + hud.Body).Contains(course.Name) && hud.Body.Contains("Checkpoints") &&
+                    hud.Body.Contains("Crashes") && hud.Body.Contains("Score " + session.Attempt.Score) &&
+                    hud.Body.Contains(session.Attempt.Rating), "Review must show the course and its recorded result.");
+                Capture(course.Id + "-review");
+                total = session.Attempt.TotalTime;
+                yield return Delay(.1);
+                Require(session.Attempt.TotalTime == total, "Review time must not change the completed result.");
+                session.Choose(0);
+                Require(session.Attempt.Phase == TutorialPhase.Guide && session.Attempt.Passed == 0 &&
+                    session.Attempt.Crashes == 0 && session.Attempt.TotalTime == 0 && session.Attempt.SectionTime == 0 &&
+                    Vector3.Distance(session.drone.transform.position, course.Start) < .01f,
+                    "Retry must return to the start with a fresh attempt.");
+                session.Choose(1);
+                Require(session.Selecting, "Course selection must remain available after retry.");
+            }
+        }
+
+        static BoxCollider CheckObstacles(TutorialWorld world, TutorialCourse course)
+        {
+            Require(course.Layout != null && course.Layout.Obstacles.Length > 0, "Course layout must include physical obstacles.");
+            Physics.SyncTransforms();
+            var colliders = world.GetComponentsInChildren<BoxCollider>();
+            BoxCollider first = null;
+            foreach (var obstacle in course.Layout.Obstacles)
+            {
+                var collider = Array.Find(colliders, candidate => candidate.name == obstacle.Name);
+                Require(collider && collider.enabled && !collider.isTrigger &&
+                    Vector3.Distance(collider.bounds.center, obstacle.Position) < .01f &&
+                    Vector3.Distance(collider.bounds.size, obstacle.Size) < .01f,
+                    "Missing or misplaced solid obstacle " + obstacle.Name + ".");
+                if (!first) first = collider;
+            }
+            return first;
+        }
+
         static void Require(bool condition, string message)
         {
-            if (!condition) throw new InvalidOperationException("Tutorial Play Mode check failed: " + message);
+            if (!condition) throw new InvalidOperationException("Course Play Mode check failed: " + message);
         }
     }
 }
