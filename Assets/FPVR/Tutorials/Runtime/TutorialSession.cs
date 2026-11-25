@@ -155,16 +155,6 @@ namespace FPVR.Tutorials
             if (input == null) return;
             hadXR |= XRSettings.isDeviceActive;
             input.Poll();
-            if (FlightSettingsMenu.IsBlockingInput)
-            {
-                if (Attempt != null && Attempt.Phase == TutorialPhase.Flying)
-                {
-                    if (drone.crashed) RegisterCrash();
-                    else PauseFlight();
-                }
-                neutralTime = 0;
-                return;
-            }
             if (input.Restart && Attempt != null) { RestartLevel(); return; }
             if (warmup && (input.Pause || input.Confirm))
             { CancelWarmup(); Present(); return; }
@@ -331,8 +321,7 @@ namespace FPVR.Tutorials
                 "Gamepad and Quest use Mode 2. On the left stick, up/down controls throttle and left/right controls yaw. " +
                 "On the right stick, up/down controls pitch and left/right controls roll.\n" +
                 "Restart with R, gamepad Y, or Quest X to clear the attempt.\n" +
-                "Pause with P, gamepad Start, or Quest B. Open settings with Esc or the Quest Menu button." +
-                (regularCourses ? "" : " Use small inputs.");
+                "Pause with P, Esc, gamepad Start, or Quest B." + (regularCourses ? "" : " Use small inputs.");
         }
         void Present()
         {
@@ -362,7 +351,7 @@ namespace FPVR.Tutorials
                     : Course.Instructions[Mathf.Min(Attempt.Passed, Course.Instructions.Length - 1)];
                 hud.Body = objective + "\n" +
                     (Course.FreeFlight ? "Free practice: no timer or score." : "Checkpoints " + Attempt.Passed + "/" + Attempt.CheckpointCount + "   Total " + Attempt.TotalTime.ToString("F1") + "s   Section " + Attempt.SectionTime.ToString("F1") + "s   Crashes " + Attempt.Crashes) +
-                    "\nAltitude " + drone.transform.position.y.ToString("F1") + "m   P / Start / Quest B: pause   Esc / Menu: settings";
+                    "\nAltitude " + drone.transform.position.y.ToString("F1") + "m   P / Start / Quest B: pause and controls";
             }
             else if (Attempt.Phase == TutorialPhase.Complete)
             {

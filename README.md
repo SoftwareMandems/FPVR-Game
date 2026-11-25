@@ -46,11 +46,8 @@ The motors start as soon as you touch any flight control.
 | Reset | R | Y | X |
 | Chase camera (non-VR) | C | | |
 | Recenter VR view | V | | |
-| Open or close flight settings | Esc | | Menu / options button |
 
 Gamepad and Quest controllers use the Mode 2 stick layout.
-
-Use the flight settings to adjust pitch, roll, yaw, and throttle sensitivity. Each slider starts at 100%, and changes are saved for future flights. On desktop, drag the sliders or use the arrow keys. In VR, move a thumbstick up or down to select a row and left or right to adjust it. Use the right controller's A button to select **Restore defaults** or **Close settings**.
 
 ## Playing in VR (Quest Link)
 
