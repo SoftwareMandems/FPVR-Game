@@ -12,9 +12,9 @@ An FPV drone training game for Meta Quest, built in Unity. Fly a drone through a
 
 1. Clone the repo and open the folder in Unity Hub (**Add → Add project from disk**). The first import takes a few minutes.
 2. Import the drone model from the Asset Store. See [Drone model (Asset Store)](#drone-model-asset-store) below.
-3. Press **Play** in Unity, then click **Start Flight** in the FPVR menu to load the training course.
+3. Press **Play** in Unity, then choose **Select Level** in the FPVR menu. Choose a tutorial, free flight, or a regular obstacle course to open its briefing. **Demo course** opens the original training course.
 
-Open `Assets/FPVR/Scenes/MainMenu.unity` to edit the menu in the Hierarchy. The scene list in **File → Build Profiles** starts with `MainMenu`, followed by `FPVR_Demo`.
+Open `Assets/FPVR/Scenes/MainMenu.unity` to edit the startup menu in the Hierarchy. The scene list in **File → Build Profiles** starts with `MainMenu` and includes both level scenes and the original `FPVR_Demo` scene.
 
 Built players use Unity's built-in splash. **Show Splash Screen** and **Show Unity Logo** are already enabled under **Edit → Project Settings → Player → Splash Image**, where **Preview** shows the splash in the Game view.
 
@@ -56,7 +56,7 @@ This runs the game from the Unity editor on your PC and streams it to the headse
 1. Install the **Meta Horizon Link** app on your PC and sign in with the same account as the headset.
 2. In the Link app, go to **Settings → General** and turn on **Unknown Sources**. Without this, Meta blocks the game because it hasn't been through the Quest Store review.
 3. Connect the headset with a USB-C cable (or Air Link). In the headset, open **Quick Settings → Link** and connect to your PC.
-4. Press **Play** in Unity. In the headset, point either controller at **Start Flight** and squeeze and release the trigger.
+4. Press **Play** in Unity. In the headset, point either controller at **Select Level** and squeeze and release the trigger. Use the same trigger to pick an activity from the level list.
 
 OpenXR and the Quest controller profiles are switched on automatically by `Assets/FPVR/Editor/EnableQuestControllers.cs`. If VR doesn't start, run **FPVR → Set Up Quest VR** and restart Unity.
 

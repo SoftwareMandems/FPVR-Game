@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 546232328}
   - component: {fileID: 546232330}
   m_Layer: 5
-  m_Name: Start Flight Button
+  m_Name: Select Level Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -693,9 +693,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e027847636bad304c9c6192102663a60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPVR.MainMenu
-  trainingScenePath: Assets/FPVR/Scenes/FPVR_Demo.unity
-  playButton: {fileID: 546232330}
-  playLabel: {fileID: 1523753712}
+  tutorialScenePath: Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity
+  obstacleScenePath: Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity
+  demoScenePath: Assets/FPVR/Scenes/FPVR_Demo.unity
+  menuContent: {fileID: 964342636}
+  menuFont: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &1056093823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1262,7 +1264,7 @@ GameObject:
   - component: {fileID: 1523753713}
   - component: {fileID: 1523753712}
   m_Layer: 5
-  m_Name: Start Flight Label
+  m_Name: Select Level Label
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1301,7 +1303,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: START FLIGHT
+  m_Text: SELECT LEVEL
 --- !u!222 &1523753713
 CanvasRenderer:
   m_ObjectHideFlags: 0

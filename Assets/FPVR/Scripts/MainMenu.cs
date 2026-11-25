@@ -1,32 +1,67 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace FPVR
 {
     public sealed class MainMenu : MonoBehaviour
     {
-        [SerializeField] string trainingScenePath;
-        [SerializeField] Button playButton;
-        [SerializeField] Text playLabel;
+        [SerializeField] string tutorialScenePath;
+        [SerializeField] string obstacleScenePath;
+        [SerializeField] string demoScenePath;
+        [SerializeField] GameObject menuContent;
+        [SerializeField] Font menuFont;
 
+        LevelSelectionView levelSelection;
         bool loading;
+
+        void Start()
+        {
+            if (LevelSelectionNavigation.TakeReturn(gameObject.scene.path)) Play();
+        }
 
         public void Play()
         {
-            if (loading) return; // Prevent double-clicking the button while the scene is loading. ignores clicks after
+            if (loading) return;
 
-            int trainingIndex = SceneUtility.GetBuildIndexByScenePath(trainingScenePath);
-            if (trainingIndex < 0)
+            levelSelection ??= new LevelSelectionView((RectTransform)transform, menuFont,
+                course => LoadLevel(tutorialScenePath, course.Id),
+                course => LoadLevel(obstacleScenePath, course.Id), () => LoadLevel(demoScenePath), ShowMainMenu);
+            menuContent.SetActive(false);
+            levelSelection.Show(true);
+            ResizeLevelSelection();
+        }
+
+        void ShowMainMenu()
+        {
+            if (loading) return;
+
+            levelSelection.Show(false);
+            menuContent.SetActive(true);
+        }
+
+        void OnRectTransformDimensionsChange() => ResizeLevelSelection();
+
+        void ResizeLevelSelection()
+        {
+            if (levelSelection != null) levelSelection.Fit(((RectTransform)transform).rect.size);
+        }
+
+        void LoadLevel(string scenePath, string courseId = null)
+        {
+            if (loading) return;
+
+            int buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
+            if (buildIndex < 0)
             {
-                Debug.LogError($"Enable the FPVR training scene in the build scene list: {trainingScenePath}", this);
+                levelSelection.SetStatus("This level is unavailable in this build.");
+                Debug.LogError($"Enable the FPVR level scene in the build scene list: {scenePath}", this);
                 return;
             }
 
             loading = true;
-            playButton.interactable = false;
-            playLabel.text = "Loading…";
-            SceneManager.LoadSceneAsync(trainingIndex, LoadSceneMode.Single);
+            levelSelection.SetStatus("Loading level…", loading: true);
+            if (courseId != null) LevelSelectionNavigation.QueueCourse(scenePath, courseId, gameObject.scene.path);
+            SceneManager.LoadSceneAsync(buildIndex, LoadSceneMode.Single);
         }
     }
 }
