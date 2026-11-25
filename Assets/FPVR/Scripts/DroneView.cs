@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.XR;
 using UnityEngine.XR;
 
 namespace FPVR
@@ -9,44 +8,31 @@ namespace FPVR
     {
         public DroneFlight drone;
         public Camera view;
-        public Transform trackingOffset;
         [Tooltip("FPV camera mount in the drone's local axes: X right, Y up, Z forward.")]
         public Vector3 cameraOffset = new Vector3(0, .18f, .24f);
         public Vector3 chaseOffset = new Vector3(0, 2.2f, -4);
-        TrackedPoseDriver tracking;
-        bool xr, chase;
-        public bool IsVR => xr;
+        VrFpvDisplay headsetDisplay;
+        bool chase;
+        public bool IsVR => XRSettings.isDeviceActive;
+
         void Start()
         {
-            if (!drone || !view || !trackingOffset)
-            { Debug.LogError("Pilot Rig requires Drone, View and Tracking Offset references.", this); enabled = false; return; }
-            tracking = view.GetComponent<TrackedPoseDriver>();
-            if (!tracking) tracking = view.gameObject.AddComponent<TrackedPoseDriver>();
-            tracking.enabled = false;
-            tracking.positionInput = new InputActionProperty(new InputAction("Head Position", InputActionType.Value, "<XRHMD>/centerEyePosition"));
-            tracking.rotationInput = new InputActionProperty(new InputAction("Head Rotation", InputActionType.Value, "<XRHMD>/centerEyeRotation"));
-            tracking.ignoreTrackingState = true;
+            if (drone && view) return;
+            Debug.LogError("Pilot Rig requires Drone and View references.", this);
+            enabled = false;
         }
+
         void LateUpdate()
         {
-            if (!tracking) return;
-            bool active = XRSettings.isDeviceActive;
-            if (active != xr)
-            {
-                xr = active; tracking.enabled = xr;
-                if (xr) { Recenter(); Invoke(nameof(Recenter), .5f); }
-                else
-                {
-                    trackingOffset.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                    view.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                }
-            }
-            var k = Keyboard.current;
-            if (k != null && !FlightSettingsMenu.IsBlockingInput)
-            {
-                if (k.cKey.wasPressedThisFrame) chase = !chase;
-                if (k.vKey.wasPressedThisFrame && xr) Recenter();
-            }
+            bool xr = IsVR;
+            if (xr && headsetDisplay == null) headsetDisplay = new VrFpvDisplay(view);
+            else if (!xr) CloseHeadsetDisplay();
+            headsetDisplay?.SetComfortBorder(VrComfortSettings.Enabled);
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && !FlightSettingsMenu.IsBlockingInput && keyboard.cKey.wasPressedThisFrame)
+                chase = !chase;
+
             if (!xr && chase)
             {
                 Quaternion yaw = Quaternion.Euler(0, drone.transform.eulerAngles.y, 0);
@@ -55,19 +41,17 @@ namespace FPVR
             }
             else
             {
-                // Follow the full drone attitude, including pitch, roll and inverted flight.
-                // VR head tracking remains relative to this mount through its child transforms.
+                // The headset displays this feed without changing the drone camera's pose.
                 transform.SetPositionAndRotation(drone.transform.TransformPoint(cameraOffset), drone.transform.rotation);
             }
         }
-        public void Recenter()
+
+        void OnDisable() => CloseHeadsetDisplay();
+
+        void CloseHeadsetDisplay()
         {
-            if (!xr || !trackingOffset) return;
-            var head = InputDevices.GetDeviceAtXRNode(XRNode.Head);
-            if (!head.TryGetFeatureValue(UnityEngine.XR.CommonUsages.devicePosition, out Vector3 position)) return;
-            if (!head.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceRotation, out Quaternion rotation)) return;
-            trackingOffset.localRotation = Quaternion.Euler(0, -rotation.eulerAngles.y, 0);
-            trackingOffset.localPosition = -(trackingOffset.localRotation * position);
+            headsetDisplay?.Dispose();
+            headsetDisplay = null;
         }
     }
 }
