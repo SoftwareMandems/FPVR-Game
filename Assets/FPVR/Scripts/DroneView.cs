@@ -42,11 +42,8 @@ namespace FPVR
                 }
             }
             var k = Keyboard.current;
-            if (k != null && !FlightSettingsMenu.IsBlockingInput)
-            {
-                if (k.cKey.wasPressedThisFrame) chase = !chase;
-                if (k.vKey.wasPressedThisFrame && xr) Recenter();
-            }
+            if (k != null && k.cKey.wasPressedThisFrame) chase = !chase;
+            if (k != null && k.vKey.wasPressedThisFrame && xr) Recenter();
             if (!xr && chase)
             {
                 Quaternion yaw = Quaternion.Euler(0, drone.transform.eulerAngles.y, 0);

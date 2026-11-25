@@ -46,9 +46,8 @@ namespace FPVR.Tutorials
         public void RefreshHeadsetPanel()
         {
             if (!panel) return;
-            bool visible = IsVR && !FlightSettingsMenu.IsBlockingInput;
-            panel.gameObject.SetActive(visible);
-            if (!visible) return;
+            panel.gameObject.SetActive(IsVR);
+            if (!IsVR) return;
             panel.localPosition = new Vector3(0, Flying ? -.7f : 0, 2.3f);
             panel.GetChild(0).localScale = new Vector3(1.95f, Flying ? .62f : 1.65f, 1);
             text.transform.localPosition = new Vector3(-.88f, Flying ? .24f : .73f, 0);
@@ -86,7 +85,7 @@ namespace FPVR.Tutorials
         }
         void OnGUI()
         {
-            if (IsVR || FlightSettingsMenu.IsBlockingInput) return;
+            if (IsVR) return;
             float scale = Mathf.Min(Screen.width / 1100f, Screen.height / 800f);
             var previous = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * scale);
@@ -104,7 +103,7 @@ namespace FPVR.Tutorials
             GUILayout.Space(12);
             for (int i = 0; i < Options.Length; i++)
                 if (GUILayout.Button((i == Selected ? "> " : "   ") + Options[i], button, GUILayout.Height(42))) Choose?.Invoke(i);
-            if (!Flying) GUILayout.Label("Arrows / D-pad: choose   Enter / gamepad A: select\nP / Start: pause or back   Esc: settings", body);
+            if (!Flying) GUILayout.Label("Arrows / D-pad: choose   Enter / gamepad A: select\nEsc / P / Start: pause or back", body);
             GUILayout.EndArea(); GUI.matrix = previous;
         }
         void OnDestroy() { if (panel) Destroy(panel.gameObject); if (backdrop) Destroy(backdrop); if (lettering) Destroy(lettering); }

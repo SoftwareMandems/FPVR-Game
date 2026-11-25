@@ -39,7 +39,7 @@ namespace FPVR.Tutorials
         {
             var k = Keyboard.current; var g = Gamepad.current;
             bool c = (k != null && k.enterKey.isPressed) || (g != null && g.buttonSouth.isPressed) || confirm.IsPressed() || Button(XRNode.RightHand, false);
-            bool p = (k != null && k.pKey.isPressed) || (g != null && g.startButton.isPressed) || pause.IsPressed() || Button(XRNode.RightHand, true);
+            bool p = (k != null && (k.escapeKey.isPressed || k.pKey.isPressed)) || (g != null && g.startButton.isPressed) || pause.IsPressed() || Button(XRNode.RightHand, true);
             bool r = (k != null && k.rKey.isPressed) || (g != null && g.buttonNorth.isPressed) || restart.IsPressed() || Button(XRNode.LeftHand, false);
             Confirm = c && !wasConfirm; Pause = p && !wasPause; wasConfirm = c; wasPause = p;
             Restart = r && !wasRestart; wasRestart = r;

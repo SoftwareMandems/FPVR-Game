@@ -85,11 +85,6 @@ namespace FPVR
         void Update()
         {
             if (gates == null) return;
-            if (FlightSettingsMenu.IsBlockingInput)
-            {
-                if (vrHud) vrHud.gameObject.SetActive(false);
-                return;
-            }
             if (drone.armed && !finished) elapsed += Time.deltaTime;
             Vector3 now = drone.transform.position;
             if (drone.armed && !finished && nextGate < gates.Length && gates[nextGate].Crossed(previous, now, droneClearanceRadius))
@@ -105,13 +100,13 @@ namespace FPVR
             if (vrHud)
             {
                 vrHud.gameObject.SetActive(pilot.IsVR);
-                if (pilot.IsVR) vrHud.text = Status() + "\nGate " + nextGate + "/" + gates.Length + "   " + elapsed.ToString("F1") + " s\nMove a stick to fly   X: reset   Menu: settings";
+                if (pilot.IsVR) vrHud.text = Status() + "\nGate " + nextGate + "/" + gates.Length + "   " + elapsed.ToString("F1") + " s\nMove a stick to fly   X: reset";
             }
         }
         string Status() => drone.crashed ? "CRASHED / RESET TO RETRY" : finished ? "COURSE COMPLETE" : drone.armed ? "FLYING / ASSISTED" : "READY / PRESS ANY FLIGHT KEY";
         void OnGUI()
         {
-            if(drone==null || pilot==null || gates==null || pilot.IsVR || FlightSettingsMenu.IsBlockingInput) return;
+            if(drone==null || pilot==null || gates==null || pilot.IsVR) return;
             if(heading==null)
             {
                 heading=new GUIStyle(GUI.skin.label){fontSize=26,fontStyle=FontStyle.Bold}; heading.normal.textColor=new Color(.2f,.95f,1);
@@ -126,7 +121,7 @@ namespace FPVR
             if(GUI.Button(new Rect(220,175,195,36),"Reset run")) drone.ResetDrone();
             GUI.Box(new Rect(16,Screen.height-98,790,82),GUIContent.none);
             GUI.Label(new Rect(30,Screen.height-88,770,30),"W / S: forward / back    A / D: turn    Q / E: strafe",body);
-            GUI.Label(new Rect(30,Screen.height-58,770,30),"Space: up    Shift: down    R: reset    C: FPV / chase cam    Esc: settings",body);
+            GUI.Label(new Rect(30,Screen.height-58,770,30),"Space: up    Shift: down    R: reset    C: FPV / chase cam",body);
             if(drone.crashed || finished)
                 GUI.Label(new Rect(Screen.width/2-200,Screen.height/2-30,500,60),drone.crashed?"CRASHED — Press R to retry":"COURSE COMPLETE — "+elapsed.ToString("F1")+" s",heading);
         }
