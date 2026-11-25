@@ -9,8 +9,13 @@ namespace FPVR
 {
     internal sealed class FlightSettingsView
     {
-        const int RestoreIndex = FlightSensitivity.AxisCount;
+        const int ComfortIndex = FlightSensitivity.AxisCount;
+        const int RestoreIndex = ComfortIndex + 1;
         const int CloseIndex = RestoreIndex + 1;
+        const int PanelWidth = 720;
+        const int DesktopPanelHeight = 516;
+        const int ComfortRowHeight = 64;
+        const int FooterY = 383;
 
         static readonly Color Surface = new Color32(16, 26, 39, 255);
         static readonly Color Row = new Color32(26, 40, 56, 255);
@@ -22,6 +27,9 @@ namespace FPVR
         readonly GraphicRaycaster raycaster;
         readonly GameObject desktopInput;
         readonly Image dimmer;
+        readonly RectTransform panel;
+        readonly RectTransform footer;
+        readonly Text comfortValue;
         readonly Text help;
         readonly Font font;
         readonly Material headsetMaterial;
@@ -61,7 +69,7 @@ namespace FPVR
             dimmer.rectTransform.anchorMin = Vector2.zero;
             dimmer.rectTransform.anchorMax = Vector2.one;
             dimmer.rectTransform.offsetMin = dimmer.rectTransform.offsetMax = Vector2.zero;
-            var panel = RectAt("Settings Panel", root.transform, 0, 0, 720, 516);
+            panel = RectAt("Settings Panel", root.transform, 0, 0, PanelWidth, DesktopPanelHeight);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(.5f, .5f);
             ImageAt(panel, Surface, true);
 
@@ -69,9 +77,16 @@ namespace FPVR
             TextAt(panel, "Drone control sensitivity", 38, 76, 644, 34, 25, Accent);
             for (int index = 0; index < FlightSensitivity.AxisCount; index++) AddSlider(panel, index);
 
-            AddButton(panel, "Restore defaults", RestoreIndex, 36, 260, Restore);
-            AddButton(panel, "Close settings", CloseIndex, 444, 240, onClose);
-            help = TextAt(panel, "", 38, 442, 644, 57, 20, MutedText);
+            var comfortRow = RectAt("Reduce Motion Sickness", panel, 36, FooterY, 648, 50);
+            highlights[ComfortIndex] = ImageAt(comfortRow, Row);
+            TextAt(comfortRow, "Reduce Motion Sickness", 15, 0, 495, 50, 25, Color.white);
+            comfortValue = TextAt(comfortRow, "", 542, 0, 90, 50, 24, Accent);
+            comfortValue.alignment = TextAnchor.MiddleRight;
+
+            footer = RectAt("Settings Footer", panel, 0, FooterY, PanelWidth, 133);
+            AddButton(footer, "Restore defaults", RestoreIndex, 36, 260, Restore);
+            AddButton(footer, "Close settings", CloseIndex, 444, 240, onClose);
+            help = TextAt(footer, "", 38, 59, 644, 57, 20, MutedText);
         }
 
         public void Open(Camera headsetCamera)
@@ -89,9 +104,18 @@ namespace FPVR
             desktopInput.SetActive(!IsVR);
             raycaster.enabled = !IsVR;
             dimmer.gameObject.SetActive(!IsVR);
+            highlights[ComfortIndex].gameObject.SetActive(IsVR);
+            if (!IsVR && selection == ComfortIndex) Select(RestoreIndex);
+            ShowComfortValue();
+
+            int comfortHeight = IsVR ? ComfortRowHeight : 0;
+            int panelHeight = DesktopPanelHeight + comfortHeight;
+            panel.sizeDelta = new Vector2(PanelWidth, panelHeight);
+            footer.anchoredPosition = new Vector2(0, -(FooterY + comfortHeight));
+
             foreach (var graphic in graphics) graphic.material = IsVR ? headsetMaterial : null;
             help.text = IsVR
-                ? "Thumbstick up/down selects. Left/right adjusts. A activates buttons.\nPress the controller menu button to close."
+                ? "Thumbstick up/down selects. Left/right adjusts. A activates.\nPress the controller menu button to close."
                 : "Drag a slider or use the arrow keys. Enter activates buttons.\nPress Esc to close.";
 
             if (IsVR)
@@ -100,7 +124,7 @@ namespace FPVR
                 canvas.worldCamera = headsetCamera;
                 var head = headsetCamera.transform;
                 var rect = (RectTransform)canvas.transform;
-                rect.sizeDelta = new Vector2(720, 516);
+                rect.sizeDelta = new Vector2(PanelWidth, panelHeight);
                 rect.localScale = Vector3.one * .0018f;
                 rect.SetPositionAndRotation(head.position + head.forward * 1.75f, head.rotation);
             }
@@ -120,16 +144,23 @@ namespace FPVR
 
         public void Dispose() => UnityEngine.Object.Destroy(headsetMaterial);
 
-        public void MoveSelection(int amount) => Select((selection + amount + highlights.Length) % highlights.Length);
+        public void MoveSelection(int amount)
+        {
+            int next = (selection + amount + highlights.Length) % highlights.Length;
+            if (!IsVR && next == ComfortIndex) next += amount;
+            Select(next);
+        }
 
         public void Adjust(int amount)
         {
             if (selection < sliders.Length) sliders[selection].value += amount;
+            else if (IsVR && selection == ComfortIndex) SetComfort(amount > 0);
         }
 
         public void Confirm()
         {
-            if (selection == RestoreIndex) Restore();
+            if (IsVR && selection == ComfortIndex) SetComfort(!VrComfortSettings.Enabled);
+            else if (selection == RestoreIndex) Restore();
             else if (selection == CloseIndex) onClose();
         }
 
@@ -147,7 +178,17 @@ namespace FPVR
                 FlightSensitivity.Set((FlightSensitivity.Axis)index, FlightSensitivity.Default);
                 ShowValue(index, FlightSensitivity.Default);
             }
+
+            if (IsVR) SetComfort(VrComfortSettings.DefaultEnabled);
         }
+
+        void SetComfort(bool enabled)
+        {
+            VrComfortSettings.SetEnabled(enabled);
+            ShowComfortValue();
+        }
+
+        void ShowComfortValue() => comfortValue.text = VrComfortSettings.Enabled ? "On" : "Off";
 
         void ShowValue(int index, int percent)
         {
@@ -192,7 +233,7 @@ namespace FPVR
 
         void AddButton(RectTransform panel, string label, int index, int x, int width, Action onClick)
         {
-            var rect = RectAt(label, panel, x, 383, width, 50);
+            var rect = RectAt(label, panel, x, 0, width, 50);
             highlights[index] = ImageAt(rect, Row, true);
             var button = rect.gameObject.AddComponent<Button>();
             button.navigation = new Navigation { mode = Navigation.Mode.None };

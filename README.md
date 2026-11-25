@@ -45,12 +45,13 @@ The motors start as soon as you touch any flight control.
 | Throttle | Space up, Shift or Left Ctrl down | Left stick up/down | Left thumbstick up/down |
 | Reset | R | Y | X |
 | Chase camera (non-VR) | C | | |
-| Recenter VR view | V | | |
 | Open or close flight settings | Esc | | Menu / options button |
 
 Gamepad and Quest controllers use the Mode 2 stick layout.
 
-Use the flight settings to adjust pitch, roll, yaw, and throttle sensitivity. Each slider starts at 100%, and changes are saved for future flights. On desktop, drag the sliders or use the arrow keys. In VR, move a thumbstick up or down to select a row and left or right to adjust it. Use the right controller's A button to select **Restore defaults** or **Close settings**.
+Use the flight settings to adjust pitch, roll, yaw, and throttle sensitivity. Each slider starts at 100%, and changes are saved for future flights. On desktop, drag the sliders or use the arrow keys. In VR, move a thumbstick up or down to select a row and left or right to adjust it. Press the right controller's A button to activate the selected option.
+
+In VR flight, the headset shows a fixed feed from the drone's camera. Turning or leaning your head keeps the same view from the drone. Turn on **Reduce Motion Sickness** in VR flight settings to add a soft, translucent border around the flight image. The setting is off by default and is saved for future VR flights.
 
 ## Playing in VR (Quest Link)
 
@@ -71,7 +72,7 @@ For a standalone Quest APK, install Android Build Support and select the Android
 |---|---|
 | `Assets/FPVR/Scenes/MainMenu.unity` | Editable startup menu with desktop and Quest input |
 | `Assets/FPVR/Scripts/DroneFlight.cs` | Flight physics and input (keyboard, gamepad, VR) |
-| `Assets/FPVR/Scripts/DroneView.cs` | FPV and chase camera, VR head tracking |
+| `Assets/FPVR/Scripts/DroneView.cs`, `VrFpvDisplay.cs` | FPV and chase cameras and the tracked VR display |
 | `Assets/FPVR/Scripts/TrainingDemo.cs` | Gate course, timer, HUD, propeller spin |
 | `Assets/FPVR/Scripts/TrainingGate.cs` | Gate pass detection and highlighting |
 | `Assets/FPVR/Scripts/SceneVisuals.cs` | Sky, lighting, post-processing and the grass field (applied at runtime) |

@@ -75,7 +75,7 @@ namespace FPVR
         void ResetRun()
         {
             nextGate = 0; elapsed = 0; finished = false; previous = drone.transform.position;
-            Highlight(); if (pilot.IsVR) pilot.Recenter();
+            Highlight();
         }
         void Highlight()
         {

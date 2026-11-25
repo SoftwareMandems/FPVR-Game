@@ -1602,7 +1602,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1544}
   m_Layer: 0
-  m_Name: Tracking Offset
+  m_Name: Camera Mount
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1730,7 +1730,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   drone: {fileID: 1482}
   view: {fileID: 1547}
-  trackingOffset: {fileID: 1544}
   cameraOffset: {x: 0, y: 0.18, z: 0.24}
   chaseOffset: {x: 0, y: 2.2, z: -4}
 --- !u!1 &1557
