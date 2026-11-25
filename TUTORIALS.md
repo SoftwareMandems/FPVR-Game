@@ -2,7 +2,7 @@
 
 ## Regular obstacle courses
 
-Choose **Select Level** in the main menu to see the regular courses alongside the tutorials. In Unity, **FPVR > Courses > Play Obstacle Courses** opens the regular scene's own selector for testing. Every level is available immediately. During flight, the HUD shows the next checkpoint, active flight times, altitude, and crash count.
+Launch **FPVR > Courses > Play Obstacle Courses** in Unity. The regular scene has its own course selector and briefing. Every level is available immediately. During flight, the HUD shows the next checkpoint, active flight times, altitude, and crash count.
 
 | Course | Difficulty | Route |
 | --- | --- | --- |
@@ -12,13 +12,13 @@ Choose **Select Level** in the main menu to see the regular courses alongside th
 
 Pass the highlighted checkpoints in order and then cross the separate finish. Regular courses use the same pause, recovery, scoring, review, and local result rules described below. Edit their routes in `Assets/FPVR/Tutorials/Runtime/ObstacleCourseCatalog.cs`.
 
-The scene is `Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity`.
+The scene is `Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity`. To connect it to a build, use **FPVR > Courses > Add Obstacle Courses to Build List**, have the main menu load `FPVR_ObstacleCourses`, and set `mainMenuScene` on the scene's session to the registered menu scene. Until that integration is configured, **Choose another level** returns to the course selector.
 
 Repeat the scene and route clearance checks with **FPVR > Courses > Validate Obstacle Courses**. Run **FPVR > Courses > Run Play Mode Smoke Checks** to exercise all three layouts, physical obstacle collisions, checkpoint order, recovery, finish, review, and retry.
 
 ## Guided practice
 
-The guided practice scene is `Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity`. Use **FPVR > Tutorials > Open Tutorial Scene** to inspect it or **FPVR > Tutorials > Play Tutorial Scene** to test it directly. The Play shortcut temporarily overrides the editor's startup scene and restores it when you stop.
+The tutorial feature is isolated from the existing demo, main menu, and flight-control implementation. Open `Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity`, or use **FPVR > Tutorials > Open Tutorial Scene**. Use **FPVR > Tutorials > Play Tutorial Scene** to test it: this temporarily overrides the editor's play-start scene so the existing demo startup helper does not redirect play, then restores that setting after play.
 
 The tutorial selection offers free flight plus three short courses. All are available immediately. Meadow and Practice Hangar provide two simple, visually distinct environments. Each course has at least two ordered checkpoints and a separate finish; the difficulty labels describe their relative progression while the geometry remains beginner-friendly.
 
@@ -39,9 +39,16 @@ Completed course results are saved locally as guest results in `Application.pers
 
 ## Main menu integration
 
-**Select Level** shows every activity from the tutorial and regular course catalogs. Choosing one opens its briefing. **Choose another level** returns to the combined list and **Return to main menu** goes to the startup screen. The **Demo course** option loads the original training scene.
+The existing menu branch and its scene are intentionally not imported. The tutorial coordinator exposes a configurable `mainMenuScene` target. Until that target is configured, returning from a lesson opens tutorial selection; this is not the application's final main menu.
 
-Both flight scenes are enabled in the shared build scene list. If a build profile overrides the shared list, enable both flight scenes and keep `MainMenu` first. The direct editor shortcuts still start at the selector for their respective scene.
+For menu integration:
+
+1. Add `Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity` to the active build profile's scene list. Use **FPVR > Tutorials > Add Tutorial Scene to Build List**, or add it in Build Profiles. If using a profile-specific scene list, verify that list too.
+2. Have the teammate's menu load `FPVR_Tutorials` with `UnityEngine.SceneManagement.SceneManager.LoadScene("FPVR_Tutorials")`.
+3. Set `mainMenuScene` on the tutorial coordinator to the menu scene's name or full scene path, and include that scene in the same build profile.
+4. Test menu -> tutorials -> guide -> flight -> pause/review -> main menu in both desktop and headset builds.
+
+The integration is opt-in; tutorial development does not replace the application's startup scene or build list automatically. Merge or rebase flight-control changes separately and recheck the control guide against their actual bindings.
 
 ## Editing a lesson
 
@@ -67,7 +74,7 @@ The authoritative requirements and design sources are in the parent repository u
 | --- | --- |
 | SRS FR-LVL-01--02 | Free-flight option is unassessed; recovery returns to its start without restarting the application. |
 | SRS FR-LVL-03--05; MIS M5 | Three immediately selectable, distinct courses labelled Introductory, Intermediate, Advanced; at least two environments. |
-| SRS FR-LVL-06; FR-UI-05 | Sessions launched from the main menu offer a return to the combined level list and the startup screen. |
+| SRS FR-LVL-06; FR-UI-05 | Leave and selection actions are provided. The final application main-menu return requires configuring `mainMenuScene` as above. |
 | SRS FR-LVL-07; FR-CHK-07; MIS M4 | New attempts and restarts clear progress, total time, section time, crashes, and previous evaluation. |
 | SRS FR-CHK-01--03/08; MIS M7 | Ordered checkpoints form a completed prefix; duplicates and skipped checkpoints do not advance it. A separate finish requires all checkpoints. |
 | SRS FR-CHK-04--06; FR-PER-04--05 | Crash screen offers Respawn and Restart Level. Respawn uses last completed checkpoint or start, retains total time/crashes/progress, and clears section time. |
@@ -100,6 +107,6 @@ Use **FPVR > Tutorials > Validate Tutorial Content** for the automated course/at
 8. **Local persistence:** Complete a course offline, inspect the saved guest result for required fields, restart the application, and confirm the record remains. Exercise a save failure and confirm the review still appears with a useful save message. Exiting or crashing without completion must not create a completed record.
 9. **Stationary/headset flow:** While seated, use only each supported controller to select, read, start, pause, recover, restart, review, and leave. Repeat standing without walking. Check readability and reachability with the headset on, including the longest crash message and the full control guide. Test PCVR with a tracked headset and gamepad while motion controllers are inactive. Repeat hardware/tracking loss checks during flight and before resuming. During the release-controls warmup, verify Cancel with keyboard, gamepad and Quest inputs even while a stick is held or tracking is unavailable.
 10. **Reliability and performance:** Run 20 crash/respawn cycles in each environment (NFR-REL-01), checking checkpoint consistency throughout. Measure the SRS frame-rate/input thresholds on target hardware. Also verify the 30-minute break reminder and the repeated-crash practice suggestion.
-11. **Application integration:** Start at the main menu and open each briefing from **Select Level**. From a briefing, pause screen, and completion review, test both return destinations. Verify that **Demo course** opens the original training scene.
+11. **Application integration:** With the menu teammate's scene registered and `mainMenuScene` configured, test every return action. Confirm the demo, menu, and improved-controls work remain intact after merging branches.
 
 Source-level/unit checks do not substitute for these Unity physics, input, rendering, persistence, and headset checks. Record untested hardware checks as unverified, rather than passed.

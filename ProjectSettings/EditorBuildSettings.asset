@@ -11,12 +11,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/FPVR/Scenes/FPVR_Demo.unity
     guid: d3eb66b85e8a46e1a96e440691317c11
-  - enabled: 1
-    path: Assets/FPVR/Tutorials/Scenes/FPVR_Tutorials.unity
-    guid: 8875727fdad27a84fac2f2d14e009631
-  - enabled: 1
-    path: Assets/FPVR/Tutorials/Scenes/FPVR_ObstacleCourses.unity
-    guid: d064c6f23cceea446b8e91ad63a97c38
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: bfa1182bd221b4ca89619141f66f1260, type: 2}
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: dc5a169419fa04987b057f65238cf3ba, type: 2}

@@ -33,7 +33,6 @@ namespace FPVR.Tutorials
         float neutralTime, sessionTime;
         int selected, consecutiveCrashes;
         bool breakReminder;
-        string launchMenuScene;
         Action queuedFlight;
         string notice = "", saveMessage = "";
 
@@ -50,18 +49,6 @@ namespace FPVR.Tutorials
             hud = gameObject.AddComponent<TutorialHud>(); hud.Attach(pilot.view); hud.Choose = Choose;
             drone.ResetCourse += ResetRequested;
             Application.targetFrameRate = 90; Time.fixedDeltaTime = 1f / 90f;
-
-            if (LevelSelectionNavigation.TryTakeCourse(gameObject.scene.path, out var courseId, out launchMenuScene))
-            {
-                int courseIndex = Array.FindIndex(Courses, course => course.Id == courseId);
-                if (courseIndex >= 0)
-                {
-                    SelectCourse(courseIndex);
-                    return;
-                }
-                Debug.LogWarning($"Level '{courseId}' was not found in {gameObject.scene.name}.", this);
-            }
-
             ShowSelection();
         }
 
@@ -171,7 +158,7 @@ namespace FPVR.Tutorials
             else if (input.Pause && !warmup)
             {
                 if (Attempt != null && Attempt.Phase == TutorialPhase.Paused) QueueFlight(() => Attempt.Resume(), resumeArmed);
-                else if (Attempt != null) ChooseAnotherLevel();
+                else if (Attempt != null) ShowSelection();
             }
             if (warmup) WarmFlight();
             if (Attempt == null || Attempt.Phase != TutorialPhase.Flying)
@@ -246,7 +233,7 @@ namespace FPVR.Tutorials
                 default: return Array.Empty<string>();
             }
         }
-        bool HasMainMenu => !string.IsNullOrEmpty(launchMenuScene ?? mainMenuScene);
+        bool HasMainMenu => !string.IsNullOrEmpty(mainMenuScene);
 
         string[] LevelOptions(params string[] actions)
         {
@@ -257,32 +244,11 @@ namespace FPVR.Tutorials
             return options;
         }
 
-        void ChooseAnotherLevel()
+        void Exit()
         {
-            if (launchMenuScene == null) ShowSelection();
-            else Exit(showLevelSelection: true);
-        }
-
-        void Exit(bool showLevelSelection = false)
-        {
-            string destination = launchMenuScene ?? mainMenuScene;
-            int buildIndex = SceneUtility.GetBuildIndexByScenePath(destination);
-            if (buildIndex >= 0)
-            {
-                CancelWarmup();
-                if (showLevelSelection) LevelSelectionNavigation.QueueReturn(destination);
-                SceneManager.LoadScene(buildIndex);
-            }
-            else if (!string.IsNullOrEmpty(destination) && Application.CanStreamedLevelBeLoaded(destination))
-            {
-                CancelWarmup();
-                SceneManager.LoadScene(destination);
-            }
-            else
-            {
-                notice = "The main menu is unavailable in this build.";
-                Present();
-            }
+            if (!Application.CanStreamedLevelBeLoaded(mainMenuScene))
+            { notice = "The main menu is unavailable in this build."; Present(); return; }
+            CancelWarmup(); SceneManager.LoadScene(mainMenuScene);
         }
         public void Choose(int index)
         {
@@ -299,17 +265,17 @@ namespace FPVR.Tutorials
             {
                 case TutorialPhase.Guide:
                     if (index == 0) QueueFlight(() => Attempt.BeginFlight(), false);
-                    else if (index == 1) ChooseAnotherLevel(); else Exit();
+                    else if (index == 1) ShowSelection(); else Exit();
                     break;
                 case TutorialPhase.Paused:
                     if (index == 0) QueueFlight(() => Attempt.Resume(), resumeArmed);
-                    else if (index == 1) RestartLevel(); else if (index == 2) ChooseAnotherLevel(); else Exit();
+                    else if (index == 1) RestartLevel(); else if (index == 2) ShowSelection(); else Exit();
                     break;
                 case TutorialPhase.Crashed:
-                    if (index == 0) Respawn(); else if (index == 1) RestartLevel(); else if (index == 2) ChooseAnotherLevel(); else Exit();
+                    if (index == 0) Respawn(); else if (index == 1) RestartLevel(); else if (index == 2) ShowSelection(); else Exit();
                     break;
                 case TutorialPhase.Complete:
-                    if (index == 0) RestartLevel(); else if (index == 1) ChooseAnotherLevel(); else Exit();
+                    if (index == 0) RestartLevel(); else if (index == 1) ShowSelection(); else Exit();
                     break;
             }
             Present();
