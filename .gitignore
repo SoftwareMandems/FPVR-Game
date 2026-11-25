@@ -37,6 +37,9 @@
 # Visual Studio cache directory
 .vs/
 
+# Unity-generated Visual Studio workload configuration
+/.vsconfig
+
 # Gradle cache directory
 .gradle/
 
