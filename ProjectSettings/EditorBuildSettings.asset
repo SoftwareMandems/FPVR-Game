@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/FPVR/Scenes/MainMenu.unity
+    guid: d5e6862feeab5d3498127997fdef4b45
+  - enabled: 1
     path: Assets/FPVR/Scenes/FPVR_Demo.unity
     guid: d3eb66b85e8a46e1a96e440691317c11
   m_configObjects:

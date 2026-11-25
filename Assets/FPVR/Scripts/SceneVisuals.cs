@@ -1,24 +1,27 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace FPVR
 {
     // Dresses the demo scene when it starts: sky, sunlight, ambient light, haze,
     // post-processing (tonemapping, bloom, colour grading) and a mown-grass field.
-    // Runs automatically in any scene that contains a TrainingDemo, so nothing needs wiring up.
+    // Called by the training manager when the course is loaded.
     public static class SceneVisuals
     {
         const float FieldSize = 600f, StripeWidth = 4f;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Bootstrap()
+        internal static void Apply(Camera camera)
         {
-            if (Object.FindAnyObjectByType<TrainingDemo>() == null) return;
-            Sky(); Lighting(); PostProcessing(); Field();
+            Scene scene = camera.gameObject.scene;
+            Sky(camera);
+            Lighting(scene);
+            PostProcessing(camera, scene);
+            Field(scene);
         }
 
-        static void Sky()
+        static void Sky(Camera camera)
         {
             Material source = Resources.Load<Material>("FPVR_Sky");
             Shader shader = source && source.shader.isSupported ? source.shader : Shader.Find("Skybox/Procedural");
@@ -32,10 +35,10 @@ namespace FPVR
             sky.SetColor("_SkyTint", new Color(.48f, .52f, .58f));
             sky.SetColor("_GroundColor", new Color(.42f, .48f, .40f));
             RenderSettings.skybox = sky;
-            foreach (var cam in Camera.allCameras) cam.clearFlags = CameraClearFlags.Skybox;
+            camera.clearFlags = CameraClearFlags.Skybox;
         }
 
-        static void Lighting()
+        static void Lighting(Scene scene)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(.56f, .68f, .86f);
@@ -51,7 +54,7 @@ namespace FPVR
             Light sun = RenderSettings.sun;
             if (!sun)
                 foreach (var light in Object.FindObjectsByType<Light>())
-                    if (light.type == LightType.Directional) { sun = light; break; }
+                    if (light.gameObject.scene == scene && light.type == LightType.Directional) { sun = light; break; }
             if (!sun) return;
             // A lower, warmer sun gives long readable shadows across the course.
             sun.transform.rotation = Quaternion.Euler(40, -35, 0);
@@ -62,10 +65,9 @@ namespace FPVR
             RenderSettings.sun = sun;
         }
 
-        static void PostProcessing()
+        static void PostProcessing(Camera camera, Scene scene)
         {
-            foreach (var cam in Camera.allCameras)
-                cam.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = true;
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.name = "FPVR Post";
             profile.Add<Tonemapping>(true).mode.Override(TonemappingMode.ACES);
@@ -76,14 +78,16 @@ namespace FPVR
             var vignette = profile.Add<Vignette>(true);
             vignette.intensity.Override(.2f); vignette.smoothness.Override(.45f);
             var volume = new GameObject("Post Processing").AddComponent<Volume>();
+            SceneManager.MoveGameObjectToScene(volume.gameObject, scene);
             volume.isGlobal = true; volume.priority = 10; volume.sharedProfile = profile;
         }
 
-        static void Field()
+        static void Field(Scene scene)
         {
             Material paint = null;
             foreach (var r in Object.FindObjectsByType<MeshRenderer>())
             {
+                if (r.gameObject.scene != scene) continue;
                 string n = r.gameObject.name;
                 if (n == "Ground")
                 {
