@@ -138,7 +138,7 @@ namespace FPVR
 
         void Update()
         {
-            if (!hasFocus) return;
+            if (!hasFocus || FlightSettingsMenu.IsBlockingInput) return;
             bool reset = false;
             Vector2 targetTilt = Vector2.zero;
             float targetThrottle = 0, targetYaw = 0;
@@ -226,14 +226,17 @@ namespace FPVR
             // -> RPM target -> dRPM/dt=(target-RPM)/tau -> F=kF*RPM² -> rigid-body motion.
             float hoverForce = Body.mass * gravity;
             float totalLimit = 4f * Mathf.Max(.01f, maxMotorThrust);
-            float collective = throttle < 0 ? hoverForce * (1f + throttle) :
-                Mathf.Lerp(hoverForce, totalLimit, throttle);
+            float throttleInput = FlightSensitivity.ShapeThrottle(throttle);
+            float collective = throttleInput < 0 ? hoverForce * (1f + throttleInput) :
+                Mathf.Lerp(hoverForce, totalLimit, throttleInput);
             collective = Mathf.Clamp(collective, 0, totalLimit);
             bool powered = armed && !crashed && collective > .0001f;
             if (powered)
             {
                 Vector3 desiredRate = Vector3.Scale(maxRates, new Vector3(
-                    RateCurve(tilt.y), RateCurve(yaw), -RateCurve(tilt.x))) * Mathf.Deg2Rad;
+                    RateCurve(tilt.y) * FlightSensitivity.Multiplier(FlightSensitivity.Axis.Pitch),
+                    RateCurve(yaw) * FlightSensitivity.Multiplier(FlightSensitivity.Axis.Yaw),
+                    -RateCurve(tilt.x) * FlightSensitivity.Multiplier(FlightSensitivity.Axis.Roll))) * Mathf.Deg2Rad;
                 Vector3 error = desiredRate - omega;
                 Vector3 acceleration = error * rateGain + rateIntegral * rateIntegralGain;
                 // Feed forward rigid-body gyroscopic coupling; the physical term below still runs
