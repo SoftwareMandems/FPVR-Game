@@ -29,7 +29,7 @@ The committed tutorial scene contains its own saved copy of the existing drone a
 Read the control and safety guide before starting. It reflects the drone's configured stick mode; the tutorial does not change flight physics or the selected flight-control configuration. Instructions remain visible during each course.
 
 - Navigate tutorial screens with keyboard arrows and Enter, a gamepad D-pad and A, or the Quest left stick and A. Desktop users can also click the menu buttons. The same menu content is shown in the headset.
-- Pause with Escape/P, gamepad Start, or Quest B. Resume, restart, change lesson, and leave from the tutorial screens without physically walking.
+- Pause with P, gamepad Start, or Quest B. Escape or the Quest Menu button opens flight settings. Opening settings during an attempt pauses flight. Resume, restart, change lesson, and leave from the tutorial screens without physically walking.
 - Existing drone reset inputs (keyboard R, gamepad Y, Quest X) mean **Restart Level** in tutorials. Restart clears the attempt. Use **Respawn** on the crash screen to keep completed checkpoints, total time, and crashes while resetting section time.
 - Complete the highlighted checkpoints in order, then fly through the finish. Passing later checkpoints early does not count.
 
